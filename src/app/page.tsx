@@ -1,69 +1,184 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { ClassPeriod } from '@/lib/types';
+import * as storage from '@/lib/storage';
+import ClassCard from '@/components/ClassCard';
+import AddClassModal from '@/components/AddClassModal';
+import EditClassModal from '@/components/EditClassModal';
+import ConfirmDialog from '@/components/ConfirmDialog';
+
+export default function Dashboard() {
+  const router = useRouter();
+  const [classes, setClasses] = useState<ClassPeriod[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<ClassPeriod | null>(null);
+
+  const loadClasses = useCallback(() => {
+    const loaded = storage.getClasses();
+    setClasses(loaded);
+    setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    loadClasses();
+  }, [loadClasses]);
+
+  const handleAddClass = (name: string, period: string) => {
+    storage.addClass(name, period);
+    loadClasses();
+  };
+
+  const handleEditClass = (id: string, name: string, period: string) => {
+    storage.updateClass(id, { name, period });
+    loadClasses();
+  };
+
+  const handleDeleteClass = () => {
+    if (selectedClass) {
+      storage.deleteClass(selectedClass.id);
+      setShowDeleteConfirm(false);
+      setSelectedClass(null);
+      loadClasses();
+    }
+  };
+
+  const handleClassClick = (classPeriod: ClassPeriod) => {
+    router.push(`/class/${classPeriod.id}`);
+  };
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-gray-400 text-sm">Loading...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="min-h-screen bg-gray-50/50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200/80 sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              {/* Clean SVG icon — minimalist target */}
+              <svg className="w-7 h-7 text-gray-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="6" />
+                <circle cx="12" cy="12" r="2" />
+              </svg>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 tracking-tight leading-tight">
+                  PickMe
+                </h1>
+                <p className="text-xs text-gray-500 hidden sm:block leading-tight">
+                  Student Presentation Picker
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="inline-flex items-center gap-1.5 bg-gray-900 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              <span className="hidden sm:inline">Add Class</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        {classes.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-5">
+              <svg className="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">No classes yet</h2>
+            <p className="text-gray-500 text-sm mb-6 max-w-sm mx-auto">
+              Get started by adding your first class. You can add students and start
+              picking presenters right away.
+            </p>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="inline-flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Add Your First Class
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {classes.map((classPeriod) => (
+              <ClassCard
+                key={classPeriod.id}
+                classPeriod={classPeriod}
+                onClick={() => handleClassClick(classPeriod)}
+                onEdit={() => {
+                  setSelectedClass(classPeriod);
+                  setShowEditModal(true);
+                }}
+                onDelete={() => {
+                  setSelectedClass(classPeriod);
+                  setShowDeleteConfirm(true);
+                }}
+              />
+            ))}
+
+            {/* Add Class Card */}
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 p-8 text-gray-400 transition-all hover:border-gray-400 hover:text-gray-500 hover:bg-gray-50 min-h-[180px]"
+            >
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              <span className="font-medium text-sm">Add Class</span>
+            </button>
+          </div>
+        )}
       </main>
+
+      {/* Modals */}
+      <AddClassModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAdd={handleAddClass}
+      />
+
+      <EditClassModal
+        isOpen={showEditModal}
+        classPeriod={selectedClass}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedClass(null);
+        }}
+        onSave={handleEditClass}
+      />
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="Delete Class"
+        message={`Are you sure you want to delete "${selectedClass?.name}"? This will remove all students and cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={handleDeleteClass}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setSelectedClass(null);
+        }}
+      />
     </div>
   );
 }
