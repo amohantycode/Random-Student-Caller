@@ -133,13 +133,13 @@ export default function SpinnerWheel({ names, onSpinComplete, isSpinning, onSpin
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Pointer at top — clean dark triangle
-    const pointerW = 18;
-    const pointerH = 22;
+    // Pointer at top — points down into the wheel
+    const pointerW = 20;
+    const pointerH = 24;
     ctx.beginPath();
-    ctx.moveTo(centerX, 1);
-    ctx.lineTo(centerX - pointerW / 2, pointerH + 1);
-    ctx.lineTo(centerX + pointerW / 2, pointerH + 1);
+    ctx.moveTo(centerX - pointerW / 2, 0);
+    ctx.lineTo(centerX + pointerW / 2, 0);
+    ctx.lineTo(centerX, pointerH);
     ctx.closePath();
     ctx.fillStyle = '#1e293b';
     ctx.fill();
