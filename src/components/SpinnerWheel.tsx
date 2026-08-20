@@ -92,12 +92,24 @@ export default function SpinnerWheel({ names, onSpinComplete, isSpinning, onSpin
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      // Text
+      // Text — auto-sized based on longest name and segment count
       ctx.save();
       ctx.translate(centerX, centerY);
       ctx.rotate(startAngle + sliceAngle / 2);
 
-      const fontSize = names.length <= 6 ? 18 : names.length <= 10 ? 15 : names.length <= 16 ? 12 : 10;
+      // Determine font size: consider both segment count and name length
+      const longestName = Math.max(...names.map(n => n.length));
+      let fontSize: number;
+      if (names.length <= 6) {
+        fontSize = longestName > 15 ? 14 : longestName > 10 ? 16 : 18;
+      } else if (names.length <= 10) {
+        fontSize = longestName > 15 ? 12 : longestName > 10 ? 13 : 15;
+      } else if (names.length <= 16) {
+        fontSize = longestName > 15 ? 10 : 12;
+      } else {
+        fontSize = 9;
+      }
+
       ctx.font = `600 ${fontSize}px system-ui, -apple-system, sans-serif`;
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'right';
@@ -107,14 +119,20 @@ export default function SpinnerWheel({ names, onSpinComplete, isSpinning, onSpin
       ctx.shadowOffsetX = 1;
       ctx.shadowOffsetY = 1;
 
-      const textRadius = radius - (names.length <= 6 ? 40 : names.length <= 12 ? 30 : 22);
-      const displayName = names[i].length > 12 ? names[i].substring(0, 10) + '…' : names[i];
+      // Position text: start near the outer edge, leave room for center circle
+      const centerRadius = names.length <= 6 ? 36 : names.length <= 12 ? 30 : 24;
+      const edgePadding = 14;
+      const textRadius = radius - edgePadding;
+      
+      // Only truncate very long names (20+ chars)
+      const maxChars = names.length <= 8 ? 20 : names.length <= 14 ? 16 : 12;
+      const displayName = names[i].length > maxChars ? names[i].substring(0, maxChars - 1) + '…' : names[i];
       ctx.fillText(displayName, textRadius, 0);
       ctx.restore();
     }
 
-    // Clean white center circle (like the reference)
-    const centerRadius = names.length <= 6 ? 44 : names.length <= 12 ? 38 : 30;
+    // Clean white center circle
+    const centerRadius = names.length <= 6 ? 36 : names.length <= 12 ? 30 : 24;
 
     ctx.save();
     ctx.beginPath();
