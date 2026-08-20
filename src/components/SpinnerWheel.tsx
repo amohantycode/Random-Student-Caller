@@ -9,7 +9,7 @@ interface SpinnerWheelProps {
   onSpinStart: () => void;
 }
 
-// Muted, professional color palette — greens, teals, sage, gold
+// Muted, professional color palette
 const SEGMENT_COLORS = [
   '#3d6b59', '#8fbc94', '#c5d9a4', '#e8c86a',
   '#5a9e7a', '#b5d4a0', '#dce4a0', '#d4a843',
@@ -25,11 +25,9 @@ export default function SpinnerWheel({ names, onSpinComplete, isSpinning, onSpin
   const rotationRef = useRef(0);
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [hasSpunOnce, setHasSpunOnce] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState(460);
 
-  // Responsive canvas sizing
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
@@ -71,7 +69,7 @@ export default function SpinnerWheel({ names, onSpinComplete, isSpinning, onSpin
     ctx.fillStyle = '#e2e8f0';
     ctx.fill();
 
-    // Draw segments
+    // Segments
     for (let i = 0; i < names.length; i++) {
       const startAngle = rotation + i * sliceAngle;
       const endAngle = startAngle + sliceAngle;
@@ -115,42 +113,27 @@ export default function SpinnerWheel({ names, onSpinComplete, isSpinning, onSpin
       ctx.restore();
     }
 
-    // Center button
-    const centerRadius = names.length <= 6 ? 42 : names.length <= 12 ? 36 : 28;
+    // Clean white center circle (like the reference)
+    const centerRadius = names.length <= 6 ? 44 : names.length <= 12 ? 38 : 30;
 
     ctx.save();
     ctx.beginPath();
-    ctx.arc(centerX, centerY, centerRadius + 2, 0, 2 * Math.PI);
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
-    ctx.shadowBlur = 6;
+    ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+    ctx.shadowBlur = 8;
     ctx.shadowOffsetY = 2;
-    ctx.fillStyle = '#1e293b';
+    ctx.fillStyle = '#ffffff';
     ctx.fill();
     ctx.restore();
 
+    // Thin border on center
     ctx.beginPath();
     ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
-    const grad = ctx.createRadialGradient(
-      centerX - centerRadius * 0.15, centerY - centerRadius * 0.15, 0,
-      centerX, centerY, centerRadius
-    );
-    grad.addColorStop(0, '#475569');
-    grad.addColorStop(1, '#1e293b');
-    ctx.fillStyle = grad;
-    ctx.fill();
-    ctx.strokeStyle = '#0f172a';
+    ctx.strokeStyle = '#e2e8f0';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    const spinFontSize = centerRadius * 0.45;
-    ctx.font = `700 ${spinFontSize}px system-ui, -apple-system, sans-serif`;
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.letterSpacing = '1px';
-    ctx.fillText('SPIN', centerX, centerY + 1);
-
-    // Pointer
+    // Pointer at top — clean dark triangle
     const pointerW = 18;
     const pointerH = 22;
     ctx.beginPath();
@@ -172,7 +155,6 @@ export default function SpinnerWheel({ names, onSpinComplete, isSpinning, onSpin
     onSpinStart();
     setShowResult(false);
     setSelectedName(null);
-    setHasSpunOnce(true);
 
     const extraSpins = 5 + Math.random() * 3;
     const targetAngle = extraSpins * 2 * Math.PI + Math.random() * 2 * Math.PI;
@@ -237,14 +219,6 @@ export default function SpinnerWheel({ names, onSpinComplete, isSpinning, onSpin
   return (
     <div ref={containerRef} className="flex flex-col items-center w-full">
       <div className="relative">
-        {!hasSpunOnce && !isSpinning && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-            <p className="text-white/60 text-2xl sm:text-3xl font-semibold tracking-wide rotate-[-12deg] select-none"
-               style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-              Click to Spin
-            </p>
-          </div>
-        )}
         <canvas
           ref={canvasRef}
           className="cursor-pointer"
@@ -252,7 +226,7 @@ export default function SpinnerWheel({ names, onSpinComplete, isSpinning, onSpin
         />
       </div>
 
-      {/* Result — clean, minimal card */}
+      {/* Result — clean minimal card */}
       {showResult && selectedName && (
         <div className="mt-6 animate-slide-up">
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm px-8 py-5 text-center">

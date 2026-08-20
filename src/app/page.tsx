@@ -66,19 +66,14 @@ export default function Dashboard() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              {/* Clean SVG icon — minimalist target */}
-              <svg className="w-7 h-7 text-gray-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <circle cx="12" cy="12" r="6" />
-                <circle cx="12" cy="12" r="2" />
+              <svg className="w-6 h-6 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
               </svg>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 tracking-tight leading-tight">
-                  PickMe
+                <h1 className="text-lg font-semibold text-gray-900 tracking-tight leading-tight">
+                  Mr. McLaughlin&apos;s Classes
                 </h1>
-                <p className="text-xs text-gray-500 hidden sm:block leading-tight">
-                  Student Presentation Picker
-                </p>
               </div>
             </div>
             <button
