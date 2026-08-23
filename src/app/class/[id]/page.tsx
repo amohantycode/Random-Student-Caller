@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ClassPeriod } from '@/lib/types';
 import * as storage from '@/lib/storage';
+import { useAuth } from '@/contexts/AuthContext';
 import SpinnerWheel from '@/components/SpinnerWheel';
 import StudentList from '@/components/StudentList';
 import RosterModal from '@/components/RosterModal';
@@ -13,6 +14,7 @@ export default function ClassPage() {
   const router = useRouter();
   const params = useParams();
   const classId = params.id as string;
+  const { user, loading: authLoading } = useAuth();
 
   const [classPeriod, setClassPeriod] = useState<ClassPeriod | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -21,81 +23,98 @@ export default function ClassPage() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [lastSelected, setLastSelected] = useState<string | null>(null);
 
-  const loadClass = useCallback(() => {
-    const data = storage.getClassById(classId);
+  const loadClass = useCallback(async () => {
+    if (!user) return;
+    const data = await storage.getClassById(user.uid, classId);
     setClassPeriod(data || null);
     setIsLoaded(true);
-  }, [classId]);
+  }, [classId, user]);
 
   useEffect(() => {
-    loadClass();
-  }, [loadClass]);
+    if (user) {
+      loadClass();
+    }
+  }, [user, loadClass]);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/');
+    }
+  }, [authLoading, user, router]);
 
   const uncalledStudents = classPeriod?.students.filter(s => !s.called) || [];
   const calledStudents = classPeriod?.students.filter(s => s.called) || [];
   const uncalledNames = uncalledStudents.map(s => s.name);
 
-  const handleSpinComplete = useCallback((name: string) => {
-    if (!classPeriod) return;
+  const handleSpinComplete = useCallback(async (name: string) => {
+    if (!classPeriod || !user) return;
     const student = classPeriod.students.find(s => s.name === name && !s.called);
     if (student) {
-      storage.markCalled(classId, student.id);
+      await storage.markCalled(user.uid, classId, student.id);
       setLastSelected(name);
 
-      const updatedClass = storage.getClassById(classId);
+      const updatedClass = await storage.getClassById(user.uid, classId);
       if (updatedClass) {
         const remaining = updatedClass.students.filter(s => !s.called);
         if (remaining.length === 0 && updatedClass.students.length > 0) {
-          setTimeout(() => {
-            storage.resetCycle(classId);
-            loadClass();
+          setTimeout(async () => {
+            await storage.resetCycle(user.uid, classId);
+            await loadClass();
           }, 3000);
         }
       }
 
-      loadClass();
+      await loadClass();
     }
     setIsSpinning(false);
-  }, [classPeriod, classId, loadClass]);
+  }, [classPeriod, classId, loadClass, user]);
 
-  const handlePutBack = (studentId: string) => {
-    storage.markUncalled(classId, studentId);
-    loadClass();
+  const handlePutBack = async (studentId: string) => {
+    if (!user) return;
+    await storage.markUncalled(user.uid, classId, studentId);
+    await loadClass();
   };
 
-  const handleResetCycle = () => {
-    storage.resetCycle(classId);
+  const handleResetCycle = async () => {
+    if (!user) return;
+    await storage.resetCycle(user.uid, classId);
     setShowResetConfirm(false);
     setLastSelected(null);
-    loadClass();
+    await loadClass();
   };
 
-  const handleAddStudent = (name: string) => {
-    storage.addStudent(classId, name);
-    loadClass();
+  const handleAddStudent = async (name: string) => {
+    if (!user) return;
+    await storage.addStudent(user.uid, classId, name);
+    await loadClass();
   };
 
-  const handleAddStudentsBulk = (names: string[]) => {
-    storage.addStudentsBulk(classId, names);
-    loadClass();
+  const handleAddStudentsBulk = async (names: string[]) => {
+    if (!user) return;
+    await storage.addStudentsBulk(user.uid, classId, names);
+    await loadClass();
   };
 
-  const handleRemoveStudent = (studentId: string) => {
-    storage.removeStudent(classId, studentId);
-    loadClass();
+  const handleRemoveStudent = async (studentId: string) => {
+    if (!user) return;
+    await storage.removeStudent(user.uid, classId, studentId);
+    await loadClass();
   };
 
-  const handleUpdateStudentName = (studentId: string, name: string) => {
-    storage.updateStudentName(classId, studentId, name);
-    loadClass();
+  const handleUpdateStudentName = async (studentId: string, name: string) => {
+    if (!user) return;
+    await storage.updateStudentName(user.uid, classId, studentId, name);
+    await loadClass();
   };
 
-  const handleRosterResetCycle = () => {
-    storage.resetCycle(classId);
-    loadClass();
+  const handleRosterResetCycle = async () => {
+    if (!user) return;
+    await storage.resetCycle(user.uid, classId);
+    await loadClass();
   };
 
-  if (!isLoaded) {
+  if (authLoading || !isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-gray-400 text-sm">Loading...</div>
@@ -131,7 +150,6 @@ export default function ClassPage() {
       <header className="bg-white border-b border-gray-200/80 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between">
-            {/* Left: Back + Class Info */}
             <div className="flex items-center gap-3 min-w-0">
               <button
                 onClick={() => router.push('/')}
@@ -167,7 +185,6 @@ export default function ClassPage() {
               </div>
             </div>
 
-            {/* Right: Actions */}
             <div className="flex items-center gap-2">
               {totalStudents > 0 && (
                 <button
@@ -221,9 +238,7 @@ export default function ClassPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Spinner Column */}
             <div className="lg:col-span-2 flex flex-col items-center">
-              {/* Cycle Complete Banner */}
               {uncalledStudents.length === 0 && calledStudents.length > 0 && (
                 <div className="w-full mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
                   <p className="text-gray-800 font-medium text-sm">
@@ -250,9 +265,7 @@ export default function ClassPage() {
               />
             </div>
 
-            {/* Lists Column */}
             <div className="space-y-4">
-              {/* Quick Stats */}
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
@@ -266,19 +279,9 @@ export default function ClassPage() {
                 </div>
               </div>
 
-              <StudentList
-                title="Uncalled"
-                students={uncalledStudents}
-                variant="uncalled"
-              />
-              <StudentList
-                title="Called"
-                students={calledStudents}
-                variant="called"
-                onPutBack={handlePutBack}
-              />
+              <StudentList title="Uncalled" students={uncalledStudents} variant="uncalled" />
+              <StudentList title="Called" students={calledStudents} variant="called" onPutBack={handlePutBack} />
 
-              {/* Mobile Reset */}
               {totalStudents > 0 && (
                 <button
                   onClick={() => setShowResetConfirm(true)}

@@ -4,13 +4,17 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ClassPeriod } from '@/lib/types';
 import * as storage from '@/lib/storage';
+import { useAuth } from '@/contexts/AuthContext';
+import { signOut } from '@/lib/auth';
 import ClassCard from '@/components/ClassCard';
 import AddClassModal from '@/components/AddClassModal';
 import EditClassModal from '@/components/EditClassModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import LoginScreen from '@/components/LoginScreen';
 
 export default function Dashboard() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [classes, setClasses] = useState<ClassPeriod[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -18,43 +22,68 @@ export default function Dashboard() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassPeriod | null>(null);
 
-  const loadClasses = useCallback(() => {
-    const loaded = storage.getClasses();
+  const loadClasses = useCallback(async () => {
+    if (!user) return;
+    const loaded = await storage.getClasses(user.uid);
     setClasses(loaded);
     setIsLoaded(true);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
-    loadClasses();
-  }, [loadClasses]);
-
-  const handleAddClass = (name: string, period: string) => {
-    storage.addClass(name, period);
-    loadClasses();
-  };
-
-  const handleEditClass = (id: string, name: string, period: string) => {
-    storage.updateClass(id, { name, period });
-    loadClasses();
-  };
-
-  const handleDeleteClass = () => {
-    if (selectedClass) {
-      storage.deleteClass(selectedClass.id);
-      setShowDeleteConfirm(false);
-      setSelectedClass(null);
+    if (user) {
       loadClasses();
     }
+  }, [user, loadClasses]);
+
+  const handleAddClass = async (name: string, period: string) => {
+    if (!user) return;
+    await storage.addClass(user.uid, name, period);
+    await loadClasses();
+  };
+
+  const handleEditClass = async (id: string, name: string, period: string) => {
+    if (!user) return;
+    await storage.updateClass(user.uid, id, { name, period });
+    await loadClasses();
+  };
+
+  const handleDeleteClass = async () => {
+    if (!user || !selectedClass) return;
+    await storage.deleteClass(user.uid, selectedClass.id);
+    setShowDeleteConfirm(false);
+    setSelectedClass(null);
+    await loadClasses();
   };
 
   const handleClassClick = (classPeriod: ClassPeriod) => {
     router.push(`/class/${classPeriod.id}`);
   };
 
-  if (!isLoaded) {
+  const handleSignOut = async () => {
+    await signOut();
+    setClasses([]);
+    setIsLoaded(false);
+  };
+
+  // Auth loading
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-gray-400 text-sm">Loading...</div>
+      </div>
+    );
+  }
+
+  // Not signed in
+  if (!user) {
+    return <LoginScreen />;
+  }
+
+  // Data loading
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-gray-400 text-sm">Loading classes...</div>
       </div>
     );
   }
@@ -76,15 +105,24 @@ export default function Dashboard() {
                 </h1>
               </div>
             </div>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="inline-flex items-center gap-1.5 bg-gray-900 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              <span className="hidden sm:inline">Add Class</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="inline-flex items-center gap-1.5 bg-gray-900 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <span className="hidden sm:inline">Add Class</span>
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
+                title="Sign Out"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -131,7 +169,6 @@ export default function Dashboard() {
               />
             ))}
 
-            {/* Add Class Card */}
             <button
               onClick={() => setShowAddModal(true)}
               className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 p-8 text-gray-400 transition-all hover:border-gray-400 hover:text-gray-500 hover:bg-gray-50 min-h-[180px]"
