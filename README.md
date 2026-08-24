@@ -1,80 +1,67 @@
-# 🎯 PickMe! — Student Presentation Picker
+# Student Picker
 
-A fun, visual web app for teachers to randomly select students for class presentations. Features an animated spinner wheel, multi-class management, and persistent tracking.
+A clean, web-based tool for teachers to randomly select students for presentations without repeating until everyone has been called.
+
+Built for classroom presentation management across multiple class periods with cloud syncing and presentation history tracking.
+
+---
 
 ## Features
 
-- **🎡 Animated Spinner Wheel** — Colorful, smooth-spinning wheel that visually proves randomness
-- **📚 Multi-Class Dashboard** — Manage multiple class periods from one clean interface
-- **🔄 Fair Cycling** — Every student gets called before anyone repeats
-- **↩️ Put Back** — Return absent students to the uncalled pool with one click
-- **👥 Easy Roster Management** — Add students one-by-one or paste a list, edit names inline, remove students
-- **💾 Persistent Storage** — Data saves in your browser automatically (localStorage)
-- **📱 Responsive** — Works on desktop, tablet, and mobile
-- **🚀 Auto-Reset** — Cycle restarts automatically when everyone has been called
+- **Fair Cycle Selection**: Students are chosen randomly from those who have not yet presented. No student is repeated until every person in the class has had a turn.
+- **Interactive Spinner Wheel**: Smooth canvas-based wheel that displays all remaining uncalled students. Clicking the wheel spins it and selects a presenter.
+- **Multiple Class Periods**: Create, edit, and organize multiple classes with custom period names (e.g., Period 1 AP CS, Period 4 Java).
+- **Roster Management**:
+  - Add students individually or bulk paste an entire roster at once.
+  - Edit names inline directly from the roster view.
+  - Delete individual students or remove classes.
+- **Put Back / Absent Handling**: If a student is called but absent or unable to present, click the return arrow to place them back into the uncalled pool.
+- **Automatic Cycle Reset**: Once all students in a class have been called, the cycle automatically resets so a new round of presentations can begin. You can also reset manually at any time.
+- **Presentation History Log**: Records every student selection with date and time. Click "History" inside any class to see a chronological log grouped by day.
+- **Cloud Sync & Authentication**:
+  - Sign in with Email/Password or Google.
+  - All classes, rosters, called states, and history are saved securely to Cloud Firestore and accessible from any computer or browser.
+- **Clean Interface**: Minimalist design built with standard web typography, responsive layout, and zero visual clutter.
+
+---
 
 ## Getting Started
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) 18+ installed
 
-### Install & Run Locally
-```bash
-# Clone the repo (or download)
-cd student-picker
+- Node.js 18 or higher
+- npm
 
-# Install dependencies
-npm install
+### Installation
 
-# Start the dev server
-npm run dev
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/amohantycode/Random-Student-Caller.git
+   cd Random-Student-Caller
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-### Deploy to Vercel
+3. Configure Firebase:
+   Create or verify the Firebase configuration in `src/lib/firebase.ts` with your Firebase project credentials.
 
-1. Push this project to a GitHub repository
-2. Go to [vercel.com](https://vercel.com) and sign in with GitHub
-3. Click "New Project" → Import your repo
-4. Click "Deploy" — that's it!
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
 
-Or use the Vercel CLI:
-```bash
-npm i -g vercel
-vercel
-```
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## How to Use
-
-### 1. Create a Class
-Click **"+ Add Class"** on the dashboard. Enter the class name (e.g., "AP Computer Science Principles") and period (e.g., "3rd Period").
-
-### 2. Add Students
-Click on a class card → Click **"Manage Roster"** → Add students one at a time or use **"Switch to Bulk Add"** to paste a list of names (one per line).
-
-### 3. Spin!
-Click the **🎯 SPIN!** button (or click the wheel itself). The wheel animates and randomly selects a student from the uncalled pool.
-
-### 4. Put Back (if absent)
-If a selected student was absent, hover over their name in the **"Called"** list and click **"↩ Put Back"** to return them to the uncalled pool.
-
-### 5. Cycle Resets Automatically
-Once every student has been called, the cycle resets and everyone goes back to the uncalled list. You can also manually reset anytime via the **Reset** button.
-
-## Important Notes
-
-- **Data is stored in your browser** — use the same browser on the same device each time
-- **Clearing browser data will erase your classes** — don't clear localStorage for this site
-- If you need to switch devices, you'll need to re-enter your classes
+---
 
 ## Tech Stack
 
-- [Next.js](https://nextjs.org/) 16 (App Router)
-- [Tailwind CSS](https://tailwindcss.com/) v4
-- HTML5 Canvas (spinner wheel)
-- localStorage (data persistence)
-
-## License
-
-Built with ❤️ for Mr. McLaughlin's CS classes at Marriotts Ridge High School.
+- **Framework**: Next.js 16 (App Router)
+- **Styling**: Tailwind CSS
+- **Authentication**: Firebase Authentication
+- **Database**: Cloud Firestore
+- **Graphics**: HTML5 Canvas for the spinner wheel
+- **Deployment**: Vercel
