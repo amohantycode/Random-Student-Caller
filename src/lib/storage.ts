@@ -4,11 +4,14 @@ import {
   getDocs,
   getDoc,
   setDoc,
+  addDoc,
   deleteDoc,
   updateDoc,
+  query,
+  orderBy,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { ClassPeriod, Student } from './types';
+import { ClassPeriod, Student, HistoryEntry } from './types';
 
 // Helper: generate a short unique ID
 export function generateId(): string {
@@ -143,4 +146,27 @@ export async function resetCycle(uid: string, classId: string): Promise<void> {
     delete s.calledAt;
   });
   await updateStudents(uid, classId, cls.students);
+}
+
+// --- History ---
+
+function historyCol(uid: string, classId: string) {
+  return collection(db, 'users', uid, 'classes', classId, 'history');
+}
+
+export async function addHistoryEntry(uid: string, classId: string, studentName: string): Promise<void> {
+  await addDoc(historyCol(uid, classId), {
+    studentName,
+    pickedAt: new Date().toISOString(),
+  });
+}
+
+export async function getHistory(uid: string, classId: string): Promise<HistoryEntry[]> {
+  const q = query(historyCol(uid, classId), orderBy('pickedAt', 'desc'));
+  const snapshot = await getDocs(q);
+  const entries: HistoryEntry[] = [];
+  snapshot.forEach((doc) => {
+    entries.push({ id: doc.id, ...doc.data() } as HistoryEntry);
+  });
+  return entries;
 }

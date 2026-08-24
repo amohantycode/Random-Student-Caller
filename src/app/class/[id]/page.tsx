@@ -9,6 +9,7 @@ import SpinnerWheel from '@/components/SpinnerWheel';
 import StudentList from '@/components/StudentList';
 import RosterModal from '@/components/RosterModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import HistoryLog from '@/components/HistoryLog';
 
 export default function ClassPage() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function ClassPage() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [showRoster, setShowRoster] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [lastSelected, setLastSelected] = useState<string | null>(null);
 
   const loadClass = useCallback(async () => {
@@ -52,6 +54,7 @@ export default function ClassPage() {
     const student = classPeriod.students.find(s => s.name === name && !s.called);
     if (student) {
       await storage.markCalled(user.uid, classId, student.id);
+      await storage.addHistoryEntry(user.uid, classId, name);
       setLastSelected(name);
 
       const updatedClass = await storage.getClassById(user.uid, classId);
@@ -186,6 +189,16 @@ export default function ClassPage() {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowHistory(true)}
+                className="inline-flex items-center gap-1.5 text-sm text-gray-700 px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors font-medium"
+                title="Presentation History"
+              >
+                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="hidden sm:inline">History</span>
+              </button>
               {totalStudents > 0 && (
                 <button
                   onClick={() => setShowResetConfirm(true)}
@@ -202,7 +215,7 @@ export default function ClassPage() {
                 onClick={() => setShowRoster(true)}
                 className="inline-flex items-center gap-1.5 text-sm text-gray-700 px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors font-medium"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
                 <span className="hidden sm:inline">Manage Class</span>
@@ -216,12 +229,7 @@ export default function ClassPage() {
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
         {totalStudents === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 mb-5">
-              <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
-            </div>
+          <div className="flex flex-col items-center justify-center py-24">
             <h2 className="text-lg font-semibold text-gray-900 mb-1">No students yet</h2>
             <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto text-center">
               Add students to this class to start picking presenters.
@@ -230,9 +238,6 @@ export default function ClassPage() {
               onClick={() => setShowRoster(true)}
               className="inline-flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
               Add Students
             </button>
           </div>
@@ -322,6 +327,16 @@ export default function ClassPage() {
         onConfirm={handleResetCycle}
         onCancel={() => setShowResetConfirm(false)}
       />
+
+      {user && (
+        <HistoryLog
+          isOpen={showHistory}
+          onClose={() => setShowHistory(false)}
+          uid={user.uid}
+          classId={classId}
+          className={classPeriod.name}
+        />
+      )}
     </div>
   );
 }

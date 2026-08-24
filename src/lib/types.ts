@@ -12,3 +12,9 @@ export interface ClassPeriod {
   students: Student[];
   createdAt: string;
 }
+
+export interface HistoryEntry {
+  id: string;
+  studentName: string;
+  pickedAt: string;
+}
