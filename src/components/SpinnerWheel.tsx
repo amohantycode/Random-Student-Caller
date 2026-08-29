@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface SpinnerWheelProps {
   names: string[];
@@ -9,36 +9,87 @@ interface SpinnerWheelProps {
   onSpinStart: () => void;
 }
 
-// Muted, professional color palette
+// Cheerful, classroom-friendly colors with enough contrast for white labels.
 const SEGMENT_COLORS = [
-  '#3d6b59', '#8fbc94', '#c5d9a4', '#e8c86a',
-  '#5a9e7a', '#b5d4a0', '#dce4a0', '#d4a843',
-  '#4a8a6e', '#a2cc8f', '#f0db8a', '#7ab88a',
-  '#6aab7f', '#cce09e', '#e5cf6d', '#468465',
-  '#94c49c', '#d8dfa0', '#ccb84e', '#5b9a75',
+  '#2563eb',
+  '#7c3aed',
+  '#be185d',
+  '#ea580c',
+  '#b45309',
+  '#15803d',
+  '#0f766e',
+  '#0369a1',
 ];
 
-export default function SpinnerWheel({ names, onSpinComplete, isSpinning, onSpinStart }: SpinnerWheelProps) {
+const TAU = Math.PI * 2;
+
+function compactName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return parts[0] || name;
+
+  return `${parts[0]} ${parts[parts.length - 1][0]}.`;
+}
+
+function fitLabel(
+  ctx: CanvasRenderingContext2D,
+  name: string,
+  maxWidth: number,
+  preferCompact: boolean,
+) {
+  const fullName = name.trim();
+  const firstChoice = preferCompact ? compactName(fullName) : fullName;
+  const choices = [firstChoice, compactName(fullName)];
+
+  for (const choice of choices) {
+    if (ctx.measureText(choice).width <= maxWidth) return choice;
+  }
+
+  const fallback = choices[choices.length - 1];
+  let low = 1;
+  let high = fallback.length;
+
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    const candidate = `${fallback.slice(0, middle)}\u2026`;
+    if (ctx.measureText(candidate).width <= maxWidth) {
+      low = middle;
+    } else {
+      high = middle - 1;
+    }
+  }
+
+  return `${fallback.slice(0, Math.max(1, low))}\u2026`;
+}
+
+export default function SpinnerWheel({
+  names,
+  onSpinComplete,
+  isSpinning,
+  onSpinStart,
+}: SpinnerWheelProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
-  const [currentRotation, setCurrentRotation] = useState(0);
+  const completionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rotationRef = useRef(0);
+  const spinningRef = useRef(false);
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [canvasSize, setCanvasSize] = useState(460);
+  const [canvasSize, setCanvasSize] = useState(320);
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
     const updateSize = () => {
-      if (containerRef.current) {
-        const containerWidth = containerRef.current.clientWidth;
-        const size = Math.min(containerWidth - 16, 520);
-        setCanvasSize(Math.max(300, size));
-      }
+      const availableWidth = Math.max(180, container.clientWidth - 32);
+      setCanvasSize(Math.min(availableWidth, 520));
     };
+
     updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(container);
+    return () => observer.disconnect();
   }, []);
 
   const drawWheel = useCallback((rotation: number) => {
@@ -50,209 +101,268 @@ export default function SpinnerWheel({ names, onSpinComplete, isSpinning, onSpin
 
     const dpr = window.devicePixelRatio || 1;
     const displaySize = canvasSize;
-    canvas.width = displaySize * dpr;
-    canvas.height = displaySize * dpr;
+    canvas.width = Math.round(displaySize * dpr);
+    canvas.height = Math.round(displaySize * dpr);
     canvas.style.width = `${displaySize}px`;
     canvas.style.height = `${displaySize}px`;
     ctx.scale(dpr, dpr);
 
-    const centerX = displaySize / 2;
-    const centerY = displaySize / 2;
-    const radius = displaySize / 2 - 8;
-    const sliceAngle = (2 * Math.PI) / names.length;
+    const center = displaySize / 2;
+    const radius = center - 14;
+    const sliceAngle = TAU / names.length;
+    const centerRadius = Math.max(40, Math.min(58, displaySize * 0.11));
 
     ctx.clearRect(0, 0, displaySize, displaySize);
 
-    // Outer ring
+    // A layered rim keeps the wheel distinct from the page without looking heavy.
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius + 3, 0, 2 * Math.PI);
-    ctx.fillStyle = '#e2e8f0';
+    ctx.arc(center, center, radius + 9, 0, TAU);
+    ctx.fillStyle = '#ffffff';
     ctx.fill();
+    ctx.strokeStyle = '#dbe4f0';
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-    // Segments
-    for (let i = 0; i < names.length; i++) {
-      const startAngle = rotation + i * sliceAngle;
+    for (let index = 0; index < names.length; index += 1) {
+      const startAngle = rotation + index * sliceAngle;
       const endAngle = startAngle + sliceAngle;
 
       ctx.beginPath();
-      ctx.moveTo(centerX, centerY);
-      ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+      ctx.moveTo(center, center);
+      ctx.arc(center, center, radius, startAngle, endAngle);
       ctx.closePath();
-      ctx.fillStyle = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
+      ctx.fillStyle = SEGMENT_COLORS[index % SEGMENT_COLORS.length];
       ctx.fill();
 
-      // Separator
       ctx.beginPath();
-      ctx.moveTo(centerX, centerY);
+      ctx.moveTo(center, center);
       ctx.lineTo(
-        centerX + Math.cos(startAngle) * radius,
-        centerY + Math.sin(startAngle) * radius
+        center + Math.cos(startAngle) * radius,
+        center + Math.sin(startAngle) * radius,
       );
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.lineWidth = names.length > 24 ? 1 : 1.5;
       ctx.stroke();
-
-      // Text — auto-sized based on longest name and segment count
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate(startAngle + sliceAngle / 2);
-
-      // Determine font size: consider both segment count and name length
-      const longestName = Math.max(...names.map(n => n.length));
-      let fontSize: number;
-      if (names.length <= 6) {
-        fontSize = longestName > 15 ? 14 : longestName > 10 ? 16 : 18;
-      } else if (names.length <= 10) {
-        fontSize = longestName > 15 ? 12 : longestName > 10 ? 13 : 15;
-      } else if (names.length <= 16) {
-        fontSize = longestName > 15 ? 10 : 12;
-      } else {
-        fontSize = 9;
-      }
-
-      ctx.font = `600 ${fontSize}px system-ui, -apple-system, sans-serif`;
-      ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
-      ctx.shadowBlur = 2;
-      ctx.shadowOffsetX = 1;
-      ctx.shadowOffsetY = 1;
-
-      // Position text: start near the outer edge, leave room for center circle
-      const centerRadius = names.length <= 6 ? 36 : names.length <= 12 ? 30 : 24;
-      const edgePadding = 14;
-      const textRadius = radius - edgePadding;
-      
-      // Only truncate very long names (20+ chars)
-      const maxChars = names.length <= 8 ? 20 : names.length <= 14 ? 16 : 12;
-      const displayName = names[i].length > maxChars ? names[i].substring(0, maxChars - 1) + '…' : names[i];
-      ctx.fillText(displayName, textRadius, 0);
-      ctx.restore();
     }
 
-    // Clean white center circle
-    const centerRadius = names.length <= 6 ? 36 : names.length <= 12 ? 30 : 24;
+    // A subtle highlight gives the flat colors some depth while staying crisp.
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(center, center, radius, 0, TAU);
+    ctx.clip();
+    const sheen = ctx.createRadialGradient(center, center, centerRadius, center, center, radius);
+    sheen.addColorStop(0, 'rgba(255, 255, 255, 0.22)');
+    sheen.addColorStop(0.68, 'rgba(255, 255, 255, 0)');
+    sheen.addColorStop(1, 'rgba(15, 23, 42, 0.12)');
+    ctx.fillStyle = sheen;
+    ctx.fillRect(0, 0, displaySize, displaySize);
+    ctx.restore();
+
+    // Keep labels upright on both halves of the wheel and abbreviate gracefully.
+    const arcBasedFontSize = radius * sliceAngle * 0.22;
+    const fontSize = Math.max(9, Math.min(names.length <= 8 ? 16 : 14, arcBasedFontSize));
+    const textRadius = radius - Math.max(12, displaySize * 0.03);
+    const maxTextWidth = Math.max(34, textRadius - centerRadius - 14);
+
+    ctx.font = `700 ${fontSize}px Inter, system-ui, -apple-system, sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(15, 23, 42, 0.32)';
+    ctx.shadowBlur = 2;
+    ctx.shadowOffsetY = 1;
+
+    names.forEach((name, index) => {
+      const middleAngle = rotation + index * sliceAngle + sliceAngle / 2;
+      const normalizedAngle = ((middleAngle % TAU) + TAU) % TAU;
+      const isOnLeft = normalizedAngle > Math.PI / 2 && normalizedAngle < (3 * Math.PI) / 2;
+      const label = fitLabel(ctx, name, maxTextWidth, names.length > 10);
+
+      ctx.save();
+      ctx.translate(
+        center + Math.cos(middleAngle) * textRadius,
+        center + Math.sin(middleAngle) * textRadius,
+      );
+      ctx.rotate(isOnLeft ? middleAngle + Math.PI : middleAngle);
+      ctx.textAlign = isOnLeft ? 'left' : 'right';
+      ctx.fillText(label, 0, 0, maxTextWidth);
+      ctx.restore();
+    });
+
+    ctx.shadowColor = 'transparent';
+    ctx.beginPath();
+    ctx.arc(center, center, radius, 0, TAU);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
 
     ctx.save();
     ctx.beginPath();
-    ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
-    ctx.shadowBlur = 8;
-    ctx.shadowOffsetY = 2;
+    ctx.arc(center, center, centerRadius, 0, TAU);
+    ctx.shadowColor = 'rgba(15, 23, 42, 0.22)';
+    ctx.shadowBlur = 14;
+    ctx.shadowOffsetY = 4;
     ctx.fillStyle = '#ffffff';
     ctx.fill();
     ctx.restore();
 
-    // Thin border on center
     ctx.beginPath();
-    ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
+    ctx.arc(center, center, centerRadius, 0, TAU);
     ctx.strokeStyle = '#e2e8f0';
     ctx.lineWidth = 1.5;
     ctx.stroke();
-
-    // Pointer at top — points down into the wheel
-    const pointerW = 20;
-    const pointerH = 24;
-    ctx.beginPath();
-    ctx.moveTo(centerX - pointerW / 2, 0);
-    ctx.lineTo(centerX + pointerW / 2, 0);
-    ctx.lineTo(centerX, pointerH);
-    ctx.closePath();
-    ctx.fillStyle = '#1e293b';
-    ctx.fill();
-  }, [names, canvasSize]);
+  }, [canvasSize, names]);
 
   useEffect(() => {
-    drawWheel(currentRotation);
-  }, [currentRotation, drawWheel]);
+    drawWheel(rotationRef.current);
+  }, [drawWheel]);
 
   const spin = useCallback(() => {
-    if (names.length === 0 || isSpinning) return;
+    if (names.length === 0 || isSpinning || spinningRef.current) return;
 
+    spinningRef.current = true;
     onSpinStart();
     setShowResult(false);
     setSelectedName(null);
 
-    const extraSpins = 5 + Math.random() * 3;
-    const targetAngle = extraSpins * 2 * Math.PI + Math.random() * 2 * Math.PI;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const extraSpins = prefersReducedMotion ? 1 : 5 + Math.random() * 2;
+    const totalRotation = extraSpins * TAU + Math.random() * TAU;
     const startRotation = rotationRef.current;
-    const totalRotation = targetAngle;
-    const duration = 4000 + Math.random() * 1000;
+    const duration = prefersReducedMotion ? 700 : 4200 + Math.random() * 600;
     const startTime = performance.now();
 
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
+      const eased = 1 - Math.pow(1 - progress, 4);
       const newRotation = startRotation + totalRotation * eased;
 
       rotationRef.current = newRotation;
-      setCurrentRotation(newRotation);
+      drawWheel(newRotation);
 
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);
-      } else {
-        const sliceAngle = (2 * Math.PI) / names.length;
-        const normalizedRotation = ((newRotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-        const pointerAngle = (3 * Math.PI / 2 - normalizedRotation + 2 * Math.PI) % (2 * Math.PI);
-        const selectedIndex = Math.floor(pointerAngle / sliceAngle) % names.length;
-
-        setSelectedName(names[selectedIndex]);
-        setShowResult(true);
-
-        setTimeout(() => {
-          onSpinComplete(names[selectedIndex], selectedIndex);
-        }, 1800);
+        return;
       }
+
+      animationRef.current = null;
+      const sliceAngle = TAU / names.length;
+      const normalizedRotation = ((newRotation % TAU) + TAU) % TAU;
+      const pointerAngle = ((3 * Math.PI) / 2 - normalizedRotation + TAU) % TAU;
+      const selectedIndex = Math.floor(pointerAngle / sliceAngle) % names.length;
+      const winner = names[selectedIndex];
+
+      setSelectedName(winner);
+      setShowResult(true);
+
+      completionTimerRef.current = setTimeout(() => {
+        spinningRef.current = false;
+        onSpinComplete(winner, selectedIndex);
+      }, prefersReducedMotion ? 500 : 1300);
     };
 
     animationRef.current = requestAnimationFrame(animate);
-  }, [names, isSpinning, onSpinStart, onSpinComplete]);
+  }, [drawWheel, isSpinning, names, onSpinComplete, onSpinStart]);
 
   useEffect(() => {
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      if (completionTimerRef.current) clearTimeout(completionTimerRef.current);
     };
   }, []);
 
   if (names.length === 0) {
     return (
-      <div ref={containerRef} className="flex flex-col items-center justify-center p-8 w-full">
-        <div className="w-64 h-64 rounded-full bg-gray-50 flex items-center justify-center border-2 border-dashed border-gray-200">
-          <div className="text-center px-6">
-            <svg className="w-10 h-10 mx-auto mb-3 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-gray-500 font-medium text-sm">All students called</p>
-            <p className="text-gray-400 text-xs mt-1">Reset the cycle to spin again</p>
+      <section
+        ref={containerRef}
+        className="flex w-full flex-col items-center rounded-3xl border border-slate-200/80 bg-white px-5 py-10 shadow-[0_20px_60px_-36px_rgba(15,23,42,0.28)]"
+      >
+        <div className="flex h-56 w-56 items-center justify-center rounded-full border-2 border-dashed border-sky-200 bg-sky-50/70">
+          <div className="px-7 text-center">
+            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl shadow-sm">
+              ✓
+            </div>
+            <p className="text-sm font-semibold text-slate-800">Everyone had a turn</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">Resetting the class for a fresh round.</p>
           </div>
         </div>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div ref={containerRef} className="flex flex-col items-center w-full">
-      <div className="relative">
-        <canvas
-          ref={canvasRef}
-          className="cursor-pointer"
-          onClick={!isSpinning ? spin : undefined}
-        />
+    <section
+      ref={containerRef}
+      className="flex w-full flex-col items-center overflow-hidden rounded-3xl border border-slate-200/80 bg-white px-4 py-5 shadow-[0_20px_60px_-36px_rgba(15,23,42,0.28)] sm:px-6 sm:py-6"
+      aria-labelledby="student-picker-title"
+    >
+      <div className="mb-5 flex w-full max-w-xl items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">Random picker</p>
+          <h2 id="student-picker-title" className="mt-1 text-lg font-bold text-slate-900">
+            {isSpinning ? 'Choosing a student…' : 'Who’s up next?'}
+          </h2>
+        </div>
+        <div className="shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
+          {names.length} {names.length === 1 ? 'student' : 'students'} left
+        </div>
       </div>
 
-      {/* Result — clean minimal card */}
-      {showResult && selectedName && (
-        <div className="mt-6 animate-slide-up">
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm px-8 py-5 text-center">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Selected</p>
-            <p className="text-2xl font-bold text-gray-900">{selectedName}</p>
-          </div>
+      <div className="relative rounded-full bg-slate-100 p-2 shadow-[0_24px_50px_-28px_rgba(15,23,42,0.75)]">
+        <div
+          aria-hidden="true"
+          className="absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1 drop-shadow-[0_3px_2px_rgba(15,23,42,0.28)]"
+        >
+          <div className="h-0 w-0 border-x-[13px] border-t-[24px] border-x-transparent border-t-slate-900" />
         </div>
-      )}
-    </div>
+
+        <button
+          type="button"
+          onClick={spin}
+          disabled={isSpinning}
+          aria-label={isSpinning ? 'Choosing a student' : `Spin to pick from ${names.length} students`}
+          className="group relative block rounded-full outline-none transition-transform duration-200 enabled:hover:scale-[1.012] enabled:active:scale-[0.99] focus-visible:ring-4 focus-visible:ring-blue-300 disabled:cursor-wait motion-reduce:transition-none"
+        >
+          <canvas ref={canvasRef} className="block rounded-full" aria-hidden="true" />
+          <span className="pointer-events-none absolute left-1/2 top-1/2 flex aspect-square w-[22%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full text-slate-900">
+            <svg
+              viewBox="0 0 24 24"
+              className={`mb-0.5 h-[24%] w-[24%] text-blue-600 ${isSpinning ? 'animate-spin' : 'transition-transform duration-300 group-hover:rotate-45'}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M20 7v5h-5" />
+              <path d="M19 12a7 7 0 1 1-2.05-4.95L20 10" />
+            </svg>
+            <span className="text-[clamp(0.62rem,2.4vw,0.82rem)] font-black tracking-[0.12em]">
+              {isSpinning ? 'PICKING' : 'SPIN'}
+            </span>
+          </span>
+        </button>
+      </div>
+
+      <p className="mt-4 text-center text-xs text-slate-500">
+        Tap the wheel or press Enter to choose fairly.
+      </p>
+
+      <div className="mt-5 min-h-[92px] w-full max-w-xl" aria-live="polite" aria-atomic="true">
+        {showResult && selectedName ? (
+          <div className="animate-slide-up rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-violet-50 px-5 py-4 text-center motion-reduce:animate-none">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Up next</p>
+            <p className="mt-1 break-words text-2xl font-black leading-tight text-slate-950 [overflow-wrap:anywhere] sm:text-3xl">
+              {selectedName}
+            </p>
+          </div>
+        ) : (
+          <div className="flex min-h-[92px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-5 text-center text-sm text-slate-500">
+            {isSpinning ? 'Watching the wheel…' : 'The selected student’s full name will appear here.'}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
