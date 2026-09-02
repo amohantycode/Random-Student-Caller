@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 type AddClassModalProps = {
   isOpen: boolean;
@@ -8,111 +8,49 @@ type AddClassModalProps = {
   onAdd: (name: string, period: string) => void;
 };
 
-export default function AddClassModal({
-  isOpen,
-  onClose,
-  onAdd,
-}: AddClassModalProps) {
+export default function AddClassModal({ isOpen, onClose, onAdd }: AddClassModalProps) {
   const [name, setName] = useState('');
   const [period, setPeriod] = useState('');
-  const [isRendered, setIsRendered] = useState(false);
+  if (!isOpen) return null;
 
-  useEffect(() => {
-    if (isOpen) {
-      setIsRendered(true);
-    } else {
-      const timer = setTimeout(() => {
-        setIsRendered(false);
-        setName('');
-        setPeriod('');
-      }, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
-
-  if (!isRendered && !isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (name.trim() && period.trim()) {
-      onAdd(name.trim(), period.trim());
-      onClose();
-    }
+  const closeModal = () => {
+    setName('');
+    setPeriod('');
+    onClose();
   };
 
-  const isFormValid = name.trim() !== '' && period.trim() !== '';
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!name.trim() || !period.trim()) return;
+    onAdd(name.trim(), period.trim());
+    closeModal();
+  };
+
+  const isFormValid = Boolean(name.trim() && period.trim());
 
   return (
-    <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-200 ${
-        isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-      }`}
-    >
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      
-      <div
-        className={`relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all duration-200 ${
-          isOpen ? 'scale-100' : 'scale-95'
-        }`}
-      >
-        <h3 className="text-xl font-semibold leading-6 text-gray-900 mb-4">
-          Add New Class
-        </h3>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="className" className="block text-sm font-medium text-gray-700 mb-1">
-              Class Name
-            </label>
-            <input
-              type="text"
-              id="className"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. AP Computer Science Principles"
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              required
-            />
+    <div className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button className="absolute inset-0 cursor-default bg-[var(--ink)]/45 backdrop-blur-sm" onClick={closeModal} aria-label="Close dialog" />
+      <div role="dialog" aria-modal="true" aria-labelledby="add-class-title" className="animate-slide-up relative w-full max-w-md overflow-hidden rounded-[18px] bg-white shadow-2xl">
+        <div className="px-6 pb-2 pt-6 sm:px-7 sm:pt-7">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--blue)]">New class</p>
+          <h2 id="add-class-title" className="mt-1 text-2xl font-semibold tracking-tight text-[var(--ink)]">Set up a class</h2>
+          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Give it the name and period teachers and students already know.</p>
+        </div>
+        <form onSubmit={handleSubmit} className="px-6 pb-6 pt-5 sm:px-7 sm:pb-7">
+          <div className="space-y-5">
+            <div>
+              <label htmlFor="className" className="mb-2 block text-sm font-semibold text-[var(--ink)]">Class name</label>
+              <input id="className" autoFocus type="text" value={name} onChange={(event) => setName(event.target.value)} placeholder="AP Computer Science" className="w-full rounded-xl border border-[var(--line)] bg-[#fafaf8] px-4 py-3 text-sm outline-none transition placeholder:text-[#a4a7af] focus:border-[var(--blue)] focus:bg-white" required />
+            </div>
+            <div>
+              <label htmlFor="period" className="mb-2 block text-sm font-semibold text-[var(--ink)]">Period or section</label>
+              <input id="period" type="text" value={period} onChange={(event) => setPeriod(event.target.value)} placeholder="3rd period" className="w-full rounded-xl border border-[var(--line)] bg-[#fafaf8] px-4 py-3 text-sm outline-none transition placeholder:text-[#a4a7af] focus:border-[var(--blue)] focus:bg-white" required />
+            </div>
           </div>
-          
-          <div>
-            <label htmlFor="period" className="block text-sm font-medium text-gray-700 mb-1">
-              Period
-            </label>
-            <input
-              type="text"
-              id="period"
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              placeholder="e.g. 3rd Period"
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              required
-            />
-          </div>
-
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              className="inline-flex justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-              onClick={onClose}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!isFormValid}
-              className={`inline-flex justify-center rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
-                isFormValid
-                  ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
-                  : 'bg-blue-300 cursor-not-allowed'
-              }`}
-            >
-              Add Class
-            </button>
+          <div className="mt-7 flex justify-end gap-2">
+            <button type="button" onClick={closeModal} className="rounded-full px-4 py-2.5 text-sm font-semibold text-[var(--muted)] transition hover:bg-[#f4f3ef] hover:text-[var(--ink)]">Cancel</button>
+            <button type="submit" disabled={!isFormValid} className="rounded-full bg-[var(--blue)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--blue-dark)] disabled:cursor-not-allowed disabled:opacity-45">Add class</button>
           </div>
         </form>
       </div>

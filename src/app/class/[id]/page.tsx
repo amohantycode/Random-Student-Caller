@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { ClassPeriod } from '@/lib/types';
+import { useCallback, useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import type { ClassPeriod } from '@/lib/types';
 import * as storage from '@/lib/storage';
 import { useAuth } from '@/contexts/AuthContext';
 import SpinnerWheel from '@/components/SpinnerWheel';
@@ -23,7 +23,6 @@ export default function ClassPage() {
   const [showRoster, setShowRoster] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [lastSelected, setLastSelected] = useState<string | null>(null);
 
   const loadClass = useCallback(async () => {
     if (!user) return;
@@ -33,39 +32,35 @@ export default function ClassPage() {
   }, [classId, user]);
 
   useEffect(() => {
-    if (user) {
-      loadClass();
-    }
-  }, [user, loadClass]);
+    if (!user) return;
+    storage.getClassById(user.uid, classId).then((data) => {
+      setClassPeriod(data || null);
+      setIsLoaded(true);
+    });
+  }, [user, classId]);
 
-  // Redirect to login if not authenticated
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/');
-    }
+    if (!authLoading && !user) router.push('/');
   }, [authLoading, user, router]);
 
-  const uncalledStudents = classPeriod?.students.filter(s => !s.called) || [];
-  const calledStudents = classPeriod?.students.filter(s => s.called) || [];
-  const uncalledNames = uncalledStudents.map(s => s.name);
+  const uncalledStudents = classPeriod?.students.filter((student) => !student.called) || [];
+  const calledStudents = classPeriod?.students.filter((student) => student.called) || [];
+  const uncalledNames = uncalledStudents.map((student) => student.name);
 
   const handleSpinComplete = useCallback(async (name: string) => {
     if (!classPeriod || !user) return;
-    const student = classPeriod.students.find(s => s.name === name && !s.called);
+    const student = classPeriod.students.find((item) => item.name === name && !item.called);
+
     if (student) {
       await storage.markCalled(user.uid, classId, student.id);
       await storage.addHistoryEntry(user.uid, classId, name);
-      setLastSelected(name);
-
       const updatedClass = await storage.getClassById(user.uid, classId);
-      if (updatedClass) {
-        const remaining = updatedClass.students.filter(s => !s.called);
-        if (remaining.length === 0 && updatedClass.students.length > 0) {
-          setTimeout(async () => {
-            await storage.resetCycle(user.uid, classId);
-            await loadClass();
-          }, 3000);
-        }
+
+      if (updatedClass && updatedClass.students.length > 0 && updatedClass.students.every((item) => item.called)) {
+        setTimeout(async () => {
+          await storage.resetCycle(user.uid, classId);
+          await loadClass();
+        }, 3000);
       }
 
       await loadClass();
@@ -83,7 +78,6 @@ export default function ClassPage() {
     if (!user) return;
     await storage.resetCycle(user.uid, classId);
     setShowResetConfirm(false);
-    setLastSelected(null);
     await loadClass();
   };
 
@@ -111,35 +105,27 @@ export default function ClassPage() {
     await loadClass();
   };
 
-  const handleRosterResetCycle = async () => {
-    if (!user) return;
-    await storage.resetCycle(user.uid, classId);
-    await loadClass();
-  };
-
   if (authLoading || !isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-gray-400 text-sm">Loading...</div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex items-center gap-3 text-sm font-medium text-[var(--muted)]">
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[var(--blue)]" />
+          Opening class…
+        </div>
       </div>
     );
   }
 
   if (!classPeriod) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3">
-        <svg className="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-        </svg>
-        <h2 className="text-lg font-semibold text-gray-900">Class not found</h2>
-        <p className="text-sm text-gray-500">This class may have been deleted.</p>
-        <button
-          onClick={() => router.push('/')}
-          className="mt-2 px-5 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
-        >
-          Back to Dashboard
+      <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
+        <p className="mb-3 text-sm font-semibold text-[var(--blue)]">Student Picker</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-[var(--ink)]">We couldn’t find that class.</h1>
+        <p className="mt-3 text-sm leading-6 text-[var(--muted)]">It may have been removed, or the link may be out of date.</p>
+        <button onClick={() => router.push('/')} className="mt-7 w-fit rounded-full bg-[var(--ink)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#26324a]">
+          Back to your classes
         </button>
-      </div>
+      </main>
     );
   }
 
@@ -148,194 +134,130 @@ export default function ClassPage() {
   const progressPercent = totalStudents > 0 ? Math.round((calledCount / totalStudents) * 100) : 0;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50/50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200/80 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <button
-                onClick={() => router.push('/')}
-                className="flex-shrink-0 p-1.5 -ml-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
-                title="Back to Dashboard"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 flex-shrink-0">
-                    {classPeriod.period}
-                  </span>
-                  <h1 className="text-base font-semibold text-gray-900 truncate">
-                    {classPeriod.name}
-                  </h1>
-                </div>
-                {totalStudents > 0 && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="h-1.5 w-24 sm:w-32 rounded-full bg-gray-100 overflow-hidden">
-                      <div
-                        className="h-full bg-gray-900 transition-all duration-500 rounded-full"
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-gray-500 flex-shrink-0">
-                      {calledCount}/{totalStudents} called
-                    </span>
-                  </div>
-                )}
+    <div className="min-h-screen">
+      <header className="sticky top-0 z-10 border-b border-black/5 bg-[rgba(247,246,242,0.92)] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-7">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              onClick={() => router.push('/')}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[var(--muted)] transition hover:bg-white hover:text-[var(--ink)]"
+              aria-label="Back to classes"
+              title="Back to classes"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <div className="min-w-0">
+              <p className="truncate text-base font-semibold text-[var(--ink)]">{classPeriod.name}</p>
+              <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--muted)]">
+                <span className="font-semibold text-[var(--blue)]">{classPeriod.period}</span>
+                <span aria-hidden="true">·</span>
+                <span>{totalStudents} {totalStudents === 1 ? 'student' : 'students'}</span>
               </div>
             </div>
+          </div>
 
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <button
+              onClick={() => setShowHistory(true)}
+              className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-[var(--muted)] transition hover:bg-white hover:text-[var(--ink)]"
+              title="Pick history"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="hidden sm:inline">History</span>
+            </button>
+            {totalStudents > 0 && (
               <button
-                onClick={() => setShowHistory(true)}
-                className="inline-flex items-center gap-1.5 text-sm text-gray-700 px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors font-medium"
-                title="Presentation History"
+                onClick={() => setShowResetConfirm(true)}
+                className="hidden rounded-full px-3 py-2 text-sm font-semibold text-[var(--muted)] transition hover:bg-white hover:text-[var(--ink)] sm:inline-flex"
               >
-                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="hidden sm:inline">History</span>
+                Reset round
               </button>
-              {totalStudents > 0 && (
-                <button
-                  onClick={() => setShowResetConfirm(true)}
-                  className="hidden sm:inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-100 transition-colors"
-                  title="Reset cycle"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Reset
-                </button>
-              )}
-              <button
-                onClick={() => setShowRoster(true)}
-                className="inline-flex items-center gap-1.5 text-sm text-gray-700 px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors font-medium"
-              >
-                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                <span className="hidden sm:inline">Manage Class</span>
-                <span className="sm:hidden">Class</span>
-              </button>
-            </div>
+            )}
+            <button
+              onClick={() => setShowRoster(true)}
+              className="inline-flex items-center rounded-full bg-[var(--ink)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#26324a]"
+            >
+              <span>Roster</span>
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+      <main className="mx-auto w-full max-w-7xl px-4 py-7 sm:px-7 sm:py-10">
         {totalStudents === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24">
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">No students yet</h2>
-            <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto text-center">
-              Add students to this class to start picking presenters.
-            </p>
-            <button
-              onClick={() => setShowRoster(true)}
-              className="inline-flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
-            >
-              Add Students
+          <div className="mx-auto max-w-xl border-t border-[var(--line)] py-16 text-center sm:py-24">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--ink)]">Add your students to begin</h1>
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-[var(--muted)]">Paste a full roster or add names one at a time. You can edit the list whenever you need.</p>
+            <button onClick={() => setShowRoster(true)} className="mt-7 rounded-full bg-[var(--blue)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--blue-dark)]">
+              Add students
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 flex flex-col items-center">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_22rem]">
+            <section className="min-w-0">
               {uncalledStudents.length === 0 && calledStudents.length > 0 && (
-                <div className="w-full mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <p className="text-gray-800 font-medium text-sm">
-                    Cycle complete — all {totalStudents} students have been called.
-                  </p>
-                  <p className="text-gray-500 text-xs mt-1">
-                    Auto-resetting momentarily, or{' '}
-                    <button
-                      onClick={handleResetCycle}
-                      className="underline font-medium hover:text-gray-700"
-                    >
-                      reset now
-                    </button>
-                    .
-                  </p>
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-y border-[var(--line)] py-3 text-sm">
+                  <p className="font-semibold text-[var(--ink)]">Everyone had a turn. A new round will start in a moment.</p>
+                  <button onClick={handleResetCycle} className="font-semibold text-[var(--blue)] hover:underline">Start now</button>
                 </div>
               )}
+              <SpinnerWheel names={uncalledNames} isSpinning={isSpinning} onSpinStart={() => setIsSpinning(true)} onSpinComplete={handleSpinComplete} />
+            </section>
 
-              <SpinnerWheel
-                names={uncalledNames}
-                isSpinning={isSpinning}
-                onSpinStart={() => setIsSpinning(true)}
-                onSpinComplete={handleSpinComplete}
-              />
-            </div>
-
-            <div className="space-y-4">
-              <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <div className="grid grid-cols-2 gap-4 text-center">
+            <aside className="overflow-hidden rounded-[18px] bg-white shadow-[0_18px_50px_-38px_rgba(23,32,51,0.5)] ring-1 ring-black/[0.04]">
+              <div className="px-5 py-5">
+                <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{uncalledStudents.length}</p>
-                    <p className="text-xs text-gray-500 font-medium">Remaining</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--blue)]">This round</p>
+                    <p className="mt-1 text-sm text-[var(--muted)]">Every name gets one turn.</p>
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-400">{calledStudents.length}</p>
-                    <p className="text-xs text-gray-500 font-medium">Called</p>
-                  </div>
+                  <span className="text-2xl font-semibold tabular-nums text-[var(--ink)]">{progressPercent}%</span>
+                </div>
+                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--paper-deep)]">
+                  <div className="h-full rounded-full bg-[var(--blue)] transition-all duration-500" style={{ width: `${progressPercent}%` }} />
+                </div>
+                <div className="mt-4 flex gap-6 text-xs text-[var(--muted)]">
+                  <span><strong className="text-base font-semibold text-[var(--ink)]">{uncalledStudents.length}</strong> left</span>
+                  <span><strong className="text-base font-semibold text-[var(--ink)]">{calledStudents.length}</strong> picked</span>
                 </div>
               </div>
 
-              <StudentList title="Uncalled" students={uncalledStudents} variant="uncalled" />
-              <StudentList title="Called" students={calledStudents} variant="called" onPutBack={handlePutBack} />
+              <StudentList title="Still to pick" students={uncalledStudents} variant="uncalled" />
+              <StudentList title="Already picked" students={calledStudents} variant="called" onPutBack={handlePutBack} />
 
-              {totalStudents > 0 && (
-                <button
-                  onClick={() => setShowResetConfirm(true)}
-                  className="sm:hidden w-full flex items-center justify-center gap-2 text-sm text-gray-600 bg-gray-100 px-4 py-2.5 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Reset Cycle
-                </button>
-              )}
-            </div>
+              <button onClick={() => setShowResetConfirm(true)} className="flex w-full items-center justify-center border-t border-[var(--line)] px-4 py-3.5 text-sm font-semibold text-[var(--muted)] transition hover:bg-[#fafaf8] hover:text-[var(--ink)] sm:hidden">
+                Reset round
+              </button>
+            </aside>
           </div>
         )}
       </main>
 
-      {/* Modals */}
       <RosterModal
         isOpen={showRoster}
         classPeriod={classPeriod}
-        onClose={() => {
-          setShowRoster(false);
-          loadClass();
-        }}
+        onClose={() => { setShowRoster(false); loadClass(); }}
         onAddStudent={handleAddStudent}
         onAddStudentsBulk={handleAddStudentsBulk}
         onRemoveStudent={handleRemoveStudent}
         onUpdateStudentName={handleUpdateStudentName}
-        onResetCycle={handleRosterResetCycle}
+        onResetCycle={handleResetCycle}
       />
-
       <ConfirmDialog
         isOpen={showResetConfirm}
-        title="Reset Cycle"
-        message="This will move all students back to the uncalled list. Are you sure?"
-        confirmLabel="Reset"
+        title="Start a new round?"
+        message="Everyone will return to the picker, ready to be chosen again."
+        confirmLabel="Start new round"
         variant="warning"
         onConfirm={handleResetCycle}
         onCancel={() => setShowResetConfirm(false)}
       />
-
       {user && (
-        <HistoryLog
-          isOpen={showHistory}
-          onClose={() => setShowHistory(false)}
-          uid={user.uid}
-          classId={classId}
-          className={classPeriod.name}
-        />
+        <HistoryLog isOpen={showHistory} onClose={() => setShowHistory(false)} uid={user.uid} classId={classId} className={classPeriod.name} />
       )}
     </div>
   );
