@@ -9,16 +9,16 @@ interface SpinnerWheelProps {
   onSpinStart: () => void;
 }
 
-// Cheerful, classroom-friendly colors with enough contrast for white labels.
+// High-contrast wheel colors for white labels.
 const SEGMENT_COLORS = [
-  '#2563eb',
-  '#7c3aed',
-  '#be185d',
-  '#ea580c',
-  '#b45309',
-  '#15803d',
-  '#0f766e',
-  '#0369a1',
+  '#2f67d8',
+  '#7559b7',
+  '#c25477',
+  '#d46a45',
+  '#c28b2c',
+  '#438366',
+  '#347d87',
+  '#3975a8',
 ];
 
 const TAU = Math.PI * 2;
@@ -119,8 +119,8 @@ export default function SpinnerWheel({
     ctx.arc(center, center, radius + 9, 0, TAU);
     ctx.fillStyle = '#ffffff';
     ctx.fill();
-    ctx.strokeStyle = '#dbe4f0';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#deddd7';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
 
     for (let index = 0; index < names.length; index += 1) {
@@ -164,7 +164,7 @@ export default function SpinnerWheel({
     const textRadius = radius - Math.max(12, displaySize * 0.03);
     const maxTextWidth = Math.max(34, textRadius - centerRadius - 14);
 
-    ctx.font = `700 ${fontSize}px Inter, system-ui, -apple-system, sans-serif`;
+    ctx.font = `700 ${fontSize}px "Avenir Next", Avenir, system-ui, sans-serif`;
     ctx.fillStyle = '#ffffff';
     ctx.textBaseline = 'middle';
     ctx.shadowColor = 'rgba(15, 23, 42, 0.32)';
@@ -207,7 +207,7 @@ export default function SpinnerWheel({
 
     ctx.beginPath();
     ctx.arc(center, center, centerRadius, 0, TAU);
-    ctx.strokeStyle = '#e2e8f0';
+    ctx.strokeStyle = '#deddd7';
     ctx.lineWidth = 1.5;
     ctx.stroke();
   }, [canvasSize, names]);
@@ -275,15 +275,15 @@ export default function SpinnerWheel({
     return (
       <section
         ref={containerRef}
-        className="flex w-full flex-col items-center rounded-3xl border border-slate-200/80 bg-white px-5 py-10 shadow-[0_20px_60px_-36px_rgba(15,23,42,0.28)]"
+        className="flex w-full flex-col items-center px-5 py-10"
       >
-        <div className="flex h-56 w-56 items-center justify-center rounded-full border-2 border-dashed border-sky-200 bg-sky-50/70">
+        <div className="flex h-56 w-56 items-center justify-center rounded-full bg-[var(--blue-soft)]">
           <div className="px-7 text-center">
-            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl shadow-sm">
+            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl text-[var(--green)] shadow-sm">
               ✓
             </div>
-            <p className="text-sm font-semibold text-slate-800">Everyone had a turn</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">Resetting the class for a fresh round.</p>
+            <p className="text-sm font-semibold text-[var(--ink)]">Round complete</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--muted)]">Resetting…</p>
           </div>
         </div>
       </section>
@@ -293,27 +293,26 @@ export default function SpinnerWheel({
   return (
     <section
       ref={containerRef}
-      className="flex w-full flex-col items-center overflow-hidden rounded-3xl border border-slate-200/80 bg-white px-4 py-5 shadow-[0_20px_60px_-36px_rgba(15,23,42,0.28)] sm:px-6 sm:py-6"
+      className="flex w-full flex-col items-center px-1 py-2 sm:px-4 sm:py-4"
       aria-labelledby="student-picker-title"
     >
-      <div className="mb-5 flex w-full max-w-xl items-start justify-between gap-4">
+      <div className="mb-6 flex w-full max-w-xl items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">Random picker</p>
-          <h2 id="student-picker-title" className="mt-1 text-lg font-bold text-slate-900">
-            {isSpinning ? 'Choosing a student…' : 'Who’s up next?'}
+          <h2 id="student-picker-title" className="text-2xl font-semibold tracking-tight text-[var(--ink)]">
+            {isSpinning ? 'Picking…' : 'Pick a student'}
           </h2>
         </div>
-        <div className="shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
-          {names.length} {names.length === 1 ? 'student' : 'students'} left
+        <div className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[var(--muted)] shadow-sm ring-1 ring-black/[0.04]">
+          {names.length} remaining
         </div>
       </div>
 
-      <div className="relative rounded-full bg-slate-100 p-2 shadow-[0_24px_50px_-28px_rgba(15,23,42,0.75)]">
+      <div className="relative rounded-full bg-[var(--paper-deep)] p-2 shadow-[0_24px_50px_-30px_rgba(23,32,51,0.65)]">
         <div
           aria-hidden="true"
           className="absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1 drop-shadow-[0_3px_2px_rgba(15,23,42,0.28)]"
         >
-          <div className="h-0 w-0 border-x-[13px] border-t-[24px] border-x-transparent border-t-slate-900" />
+          <div className="h-0 w-0 border-x-[13px] border-t-[24px] border-x-transparent border-t-[var(--ink)]" />
         </div>
 
         <button
@@ -321,13 +320,13 @@ export default function SpinnerWheel({
           onClick={spin}
           disabled={isSpinning}
           aria-label={isSpinning ? 'Choosing a student' : `Spin to pick from ${names.length} students`}
-          className="group relative block rounded-full outline-none transition-transform duration-200 enabled:hover:scale-[1.012] enabled:active:scale-[0.99] focus-visible:ring-4 focus-visible:ring-blue-300 disabled:cursor-wait motion-reduce:transition-none"
+          className="group relative block rounded-full outline-none transition-transform duration-200 enabled:hover:scale-[1.008] enabled:active:scale-[0.99] focus-visible:ring-4 focus-visible:ring-[#b7caff] disabled:cursor-wait motion-reduce:transition-none"
         >
           <canvas ref={canvasRef} className="block rounded-full" aria-hidden="true" />
-          <span className="pointer-events-none absolute left-1/2 top-1/2 flex aspect-square w-[22%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full text-slate-900">
+          <span className="pointer-events-none absolute left-1/2 top-1/2 flex aspect-square w-[22%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full text-[var(--ink)]">
             <svg
               viewBox="0 0 24 24"
-              className={`mb-0.5 h-[24%] w-[24%] text-blue-600 ${isSpinning ? 'animate-spin' : 'transition-transform duration-300 group-hover:rotate-45'}`}
+              className={`mb-0.5 h-[24%] w-[24%] text-[var(--blue)] ${isSpinning ? 'animate-spin' : 'transition-transform duration-300 group-hover:rotate-45'}`}
               fill="none"
               stroke="currentColor"
               strokeWidth="2.4"
@@ -345,21 +344,21 @@ export default function SpinnerWheel({
         </button>
       </div>
 
-      <p className="mt-4 text-center text-xs text-slate-500">
-        Tap the wheel or press Enter to choose fairly.
+      <p className="mt-4 text-center text-xs text-[var(--muted)]">
+        Tap the wheel to spin.
       </p>
 
       <div className="mt-5 min-h-[92px] w-full max-w-xl" aria-live="polite" aria-atomic="true">
         {showResult && selectedName ? (
-          <div className="animate-slide-up rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-violet-50 px-5 py-4 text-center motion-reduce:animate-none">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Up next</p>
-            <p className="mt-1 break-words text-2xl font-black leading-tight text-slate-950 [overflow-wrap:anywhere] sm:text-3xl">
+          <div className="animate-slide-up border-y border-[#cdd9f7] bg-[var(--blue-soft)] px-5 py-4 text-center motion-reduce:animate-none">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--blue)]">Selected</p>
+            <p className="mt-1 break-words text-2xl font-semibold leading-tight text-[var(--ink)] [overflow-wrap:anywhere] sm:text-3xl">
               {selectedName}
             </p>
           </div>
         ) : (
-          <div className="flex min-h-[92px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-5 text-center text-sm text-slate-500">
-            {isSpinning ? 'Watching the wheel…' : 'The selected student’s full name will appear here.'}
+          <div className="flex min-h-[92px] items-center justify-center border-y border-[var(--line)] px-5 text-center text-sm text-[var(--muted)]">
+            {isSpinning ? 'Picking…' : 'The name will appear here.'}
           </div>
         )}
       </div>

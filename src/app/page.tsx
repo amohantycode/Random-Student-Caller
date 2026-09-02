@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ClassPeriod } from '@/lib/types';
+import type { ClassPeriod } from '@/lib/types';
 import * as storage from '@/lib/storage';
 import { useAuth } from '@/contexts/AuthContext';
 import { signOut } from '@/lib/auth';
@@ -11,6 +11,17 @@ import AddClassModal from '@/components/AddClassModal';
 import EditClassModal from '@/components/EditClassModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import LoginScreen from '@/components/LoginScreen';
+
+function LoadingState({ label }: { label: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[var(--paper)]">
+      <div className="flex items-center gap-3 text-sm font-medium text-[var(--muted)]">
+        <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[var(--blue)]" />
+        {label}
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const router = useRouter();
@@ -30,10 +41,12 @@ export default function Dashboard() {
   }, [user]);
 
   useEffect(() => {
-    if (user) {
-      loadClasses();
-    }
-  }, [user, loadClasses]);
+    if (!user) return;
+    storage.getClasses(user.uid).then((loaded) => {
+      setClasses(loaded);
+      setIsLoaded(true);
+    });
+  }, [user]);
 
   const handleAddClass = async (name: string, period: string) => {
     if (!user) return;
@@ -55,147 +68,120 @@ export default function Dashboard() {
     await loadClasses();
   };
 
-  const handleClassClick = (classPeriod: ClassPeriod) => {
-    router.push(`/class/${classPeriod.id}`);
-  };
-
   const handleSignOut = async () => {
     await signOut();
     setClasses([]);
     setIsLoaded(false);
   };
 
-  // Auth loading
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-gray-400 text-sm">Loading...</div>
-      </div>
-    );
-  }
-
-  // Not signed in
-  if (!user) {
-    return <LoginScreen />;
-  }
-
-  // Data loading
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-gray-400 text-sm">Loading classes...</div>
-      </div>
-    );
-  }
+  if (authLoading) return <LoadingState label="Opening Student Picker…" />;
+  if (!user) return <LoginScreen />;
+  if (!isLoaded) return <LoadingState label="Loading your classes…" />;
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200/80 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+    <div className="min-h-screen">
+      <header className="sticky top-0 z-10 border-b border-black/5 bg-[rgba(247,246,242,0.9)] backdrop-blur-xl">
+        <div className="mx-auto max-w-5xl px-5 py-4 sm:px-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
-                Mr. McLaughlin&apos;s Classes
-              </h1>
-            </div>
-            <div className="flex items-center gap-2">
+            <h1 className="text-lg font-semibold tracking-tight text-[var(--ink)]">Student Picker</h1>
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 onClick={() => setShowAddModal(true)}
-                className="inline-flex items-center gap-1.5 bg-gray-900 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--blue)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_-8px_rgba(47,103,216,0.8)] transition hover:bg-[var(--blue-dark)]"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
-                <span className="hidden sm:inline">Add Class</span>
+                <span className="hidden sm:inline">New class</span>
+                <span className="sm:hidden">New</span>
               </button>
               <button
                 onClick={handleSignOut}
-                className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
-                title="Sign Out"
+                className="px-2.5 py-2 text-sm font-medium text-[var(--muted)] transition hover:text-[var(--ink)] sm:px-3"
+                title="Sign out"
               >
-                Sign Out
+                Sign out
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        {classes.length === 0 ? (
-          <div className="text-center py-24">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">No classes yet</h2>
-            <p className="text-gray-500 text-sm mb-6 max-w-sm mx-auto">
-              Get started by adding your first class. You can add students and start
-              picking presenters right away.
+      <main className="mx-auto max-w-5xl px-5 py-10 sm:px-8 sm:py-14">
+        <div className="mb-8 flex items-end justify-between gap-6 sm:mb-10">
+          <div>
+            <h2 className="text-3xl font-semibold tracking-[-0.035em] text-[var(--ink)] sm:text-4xl">Your classes</h2>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--muted)]">
+              Select a class to start the picker.
             </p>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="inline-flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors"
-            >
-              Add Your First Class
-            </button>
+          </div>
+          {classes.length > 0 && (
+            <p className="hidden shrink-0 pb-1 text-sm font-medium text-[var(--muted)] sm:block">
+              {classes.length} {classes.length === 1 ? 'class' : 'classes'}
+            </p>
+          )}
+        </div>
+
+        {classes.length === 0 ? (
+          <div className="border-t border-[var(--line)] py-16 sm:py-20">
+            <div className="max-w-md">
+              <h3 className="text-xl font-semibold text-[var(--ink)]">No classes yet</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Create a class and add your students.</p>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--ink)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#26324a]"
+              >
+                Add class
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-5-5 5 5-5 5" />
+                </svg>
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
             {classes.map((classPeriod) => (
               <ClassCard
                 key={classPeriod.id}
                 classPeriod={classPeriod}
-                onClick={() => handleClassClick(classPeriod)}
-                onEdit={() => {
-                  setSelectedClass(classPeriod);
-                  setShowEditModal(true);
-                }}
-                onDelete={() => {
-                  setSelectedClass(classPeriod);
-                  setShowDeleteConfirm(true);
-                }}
+                onClick={() => router.push(`/class/${classPeriod.id}`)}
+                onEdit={() => { setSelectedClass(classPeriod); setShowEditModal(true); }}
+                onDelete={() => { setSelectedClass(classPeriod); setShowDeleteConfirm(true); }}
               />
             ))}
-
             <button
               onClick={() => setShowAddModal(true)}
-              className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 p-8 text-gray-400 transition-all hover:border-gray-400 hover:text-gray-500 hover:bg-gray-50 min-h-[180px]"
+              className="group flex min-h-52 flex-col items-start justify-between rounded-[20px] border border-dashed border-[var(--line)] bg-white/35 p-5 text-left transition hover:border-[var(--blue)]/35 hover:bg-white/65 sm:p-6"
             >
-              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              <span className="font-medium text-sm">Add Class</span>
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--blue-soft)] text-[var(--blue)] transition group-hover:scale-105">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.3" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m7-7H5" />
+                </svg>
+              </span>
+              <span>
+                <span className="block text-lg font-semibold tracking-[-0.02em] text-[var(--ink)]">Add another class</span>
+                <span className="mt-1.5 block text-sm font-normal leading-6 text-[var(--muted)]">Create a class and add its roster.</span>
+              </span>
             </button>
           </div>
         )}
       </main>
 
-      {/* Modals */}
-      <AddClassModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onAdd={handleAddClass}
-      />
-
+      <AddClassModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onAdd={handleAddClass} />
       <EditClassModal
         isOpen={showEditModal}
         classPeriod={selectedClass}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedClass(null);
-        }}
+        onClose={() => { setShowEditModal(false); setSelectedClass(null); }}
         onSave={handleEditClass}
       />
-
       <ConfirmDialog
         isOpen={showDeleteConfirm}
-        title="Delete Class"
-        message={`Are you sure you want to delete "${selectedClass?.name}"? This will remove all students and cannot be undone.`}
-        confirmLabel="Delete"
+        title="Delete class?"
+        message={`This will permanently remove ${selectedClass?.name ?? 'this class'} and its student list.`}
+        confirmLabel="Delete class"
         variant="danger"
         onConfirm={handleDeleteClass}
-        onCancel={() => {
-          setShowDeleteConfirm(false);
-          setSelectedClass(null);
-        }}
+        onCancel={() => { setShowDeleteConfirm(false); setSelectedClass(null); }}
       />
     </div>
   );

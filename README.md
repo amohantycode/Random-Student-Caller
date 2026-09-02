@@ -15,13 +15,13 @@ Built for classroom presentation management across multiple class periods with c
   - Add students individually or bulk paste an entire roster at once.
   - Edit names inline directly from the roster view.
   - Delete individual students or remove classes.
-- **Put Back / Absent Handling**: If a student is called but absent or unable to present, click the return arrow to place them back into the uncalled pool.
+- **Put Back / Absent Handling**: If a student is called but absent or unable to present, choose "Put back" to return them to the current round.
 - **Automatic Cycle Reset**: Once all students in a class have been called, the cycle automatically resets so a new round of presentations can begin. You can also reset manually at any time.
 - **Presentation History Log**: Records every student selection with date and time. Click "History" inside any class to see a chronological log grouped by day.
 - **Cloud Sync & Authentication**:
   - Sign in with Email/Password or Google.
   - All classes, rosters, called states, and history are saved securely to Cloud Firestore and accessible from any computer or browser.
-- **Clean Interface**: Minimalist design built with standard web typography, responsive layout, and zero visual clutter.
+- **Classroom-friendly Interface**: A calm, responsive layout that is easy for a teacher to operate and clear enough to project for students.
 
 ---
 
@@ -36,8 +36,8 @@ Built for classroom presentation management across multiple class periods with c
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/amohantycode/Random-Student-Caller.git
-   cd Random-Student-Caller
+   git clone https://github.com/amohantycode/student-picker-v2.git
+   cd student-picker-v2
    ```
 
 2. Install dependencies:

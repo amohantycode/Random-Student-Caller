@@ -1,6 +1,5 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
 
 type ConfirmDialogProps = {
   isOpen: boolean;
@@ -13,81 +12,25 @@ type ConfirmDialogProps = {
   variant?: 'danger' | 'warning' | 'info';
 };
 
-export default function ConfirmDialog({
-  isOpen,
-  title,
-  message,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
-  onConfirm,
-  onCancel,
-  variant = 'info',
-}: ConfirmDialogProps) {
-  const [isRendered, setIsRendered] = useState(false);
+export default function ConfirmDialog({ isOpen, title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', onConfirm, onCancel, variant = 'info' }: ConfirmDialogProps) {
+  if (!isOpen) return null;
 
-  useEffect(() => {
-    if (isOpen) {
-      setIsRendered(true);
-    } else {
-      const timer = setTimeout(() => setIsRendered(false), 200);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
-
-  if (!isRendered && !isOpen) return null;
-
-  const getConfirmButtonClasses = () => {
-    switch (variant) {
-      case 'danger':
-        return 'bg-red-600 hover:bg-red-700 focus:ring-red-500 text-white';
-      case 'warning':
-        return 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-400 text-white';
-      case 'info':
-      default:
-        return 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 text-white';
-    }
-  };
+  const confirmColor = variant === 'danger'
+    ? 'bg-[var(--red)] hover:bg-[#ac3f3f]'
+    : variant === 'warning'
+      ? 'bg-[var(--ink)] hover:bg-[#26324a]'
+      : 'bg-[var(--blue)] hover:bg-[var(--blue-dark)]';
 
   return (
-    <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-200 ${
-        isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-      }`}
-    >
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onCancel}
-        aria-hidden="true"
-      />
-      
-      <div
-        className={`relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all duration-200 ${
-          isOpen ? 'scale-100' : 'scale-95'
-        }`}
-      >
-        <h3 className="text-xl font-semibold leading-6 text-gray-900 mb-2">
-          {title}
-        </h3>
-        
-        <div className="mt-2 mb-6">
-          <p className="text-sm text-gray-500">{message}</p>
-        </div>
-
-        <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            className="inline-flex justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-            onClick={onCancel}
-          >
-            {cancelLabel}
-          </button>
-          <button
-            type="button"
-            className={`inline-flex justify-center rounded-lg px-4 py-2 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${getConfirmButtonClasses()}`}
-            onClick={onConfirm}
-          >
-            {confirmLabel}
-          </button>
+    <div className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button className="absolute inset-0 cursor-default bg-[var(--ink)]/45 backdrop-blur-sm" onClick={onCancel} aria-label="Close dialog" />
+      <div role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message" className="animate-slide-up relative w-full max-w-sm rounded-[18px] bg-white p-6 shadow-2xl sm:p-7">
+        <div className={`mb-5 h-1 w-10 rounded-full ${variant === 'danger' ? 'bg-[var(--red)]' : 'bg-[var(--blue)]'}`} />
+        <h2 id="confirm-title" className="text-xl font-semibold tracking-tight text-[var(--ink)]">{title}</h2>
+        <p id="confirm-message" className="mt-2 text-sm leading-6 text-[var(--muted)]">{message}</p>
+        <div className="mt-7 flex justify-end gap-2">
+          <button type="button" onClick={onCancel} className="rounded-full px-4 py-2.5 text-sm font-semibold text-[var(--muted)] transition hover:bg-[#f4f3ef] hover:text-[var(--ink)]">{cancelLabel}</button>
+          <button type="button" onClick={onConfirm} className={`rounded-full px-5 py-2.5 text-sm font-semibold text-white transition ${confirmColor}`}>{confirmLabel}</button>
         </div>
       </div>
     </div>
