@@ -56,22 +56,19 @@ export default function LoginScreen() {
         <div className="relative z-10 text-lg font-semibold tracking-tight">Student Picker</div>
 
         <div className="relative z-10 max-w-md py-10 lg:py-0">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#9db8ff]">For every classroom</p>
-          <h1 className="text-4xl font-semibold leading-[1.08] tracking-[-0.04em] sm:text-5xl">Fair turns.<br />Less fuss.</h1>
+          <h1 className="text-4xl font-semibold leading-[1.08] tracking-[-0.04em] sm:text-5xl">Pick a student<br />at random.</h1>
           <p className="mt-5 max-w-sm text-sm leading-6 text-white/68 sm:text-base sm:leading-7">
-            Save every class roster, pick students without repeats, and keep the lesson moving.
+            Save your classes and student lists.
           </p>
         </div>
 
-        <p className="relative z-10 hidden text-xs text-white/45 lg:block">Simple enough for the classroom screen. Useful enough for every day.</p>
         <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full border-[72px] border-[#2f67d8]/45" aria-hidden="true" />
       </section>
 
       <section className="flex items-center justify-center px-7 py-12 sm:px-12 lg:py-16">
         <div className="w-full max-w-sm">
-          <p className="text-sm font-semibold text-[var(--blue)]">Welcome</p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-[-0.035em] text-[var(--ink)]">{isSignUp ? 'Create your account' : 'Sign in to your classes'}</h2>
-          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Each teacher gets their own private classes and rosters.</p>
+          <h2 className="text-3xl font-semibold tracking-[-0.035em] text-[var(--ink)]">{isSignUp ? 'Create account' : 'Sign in'}</h2>
+          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Your classes are saved to your account.</p>
 
           {error && (
             <div role="alert" className="mt-6 border-l-2 border-[var(--red)] bg-[#fff7f5] px-4 py-3 text-sm text-[#9e3d3d]">

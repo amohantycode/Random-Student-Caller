@@ -31,8 +31,6 @@ export default function RosterModal({ isOpen, classPeriod, onClose, onAddStudent
   if (!isOpen || !classPeriod) return null;
 
   const students = classPeriod.students;
-  const remainingCount = students.filter((student) => !student.called).length;
-  const pickedCount = students.length - remainingCount;
 
   const closeModal = () => {
     setConfirmDeleteId(null);
@@ -99,9 +97,8 @@ export default function RosterModal({ isOpen, classPeriod, onClose, onAddStudent
       <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-[18px] bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="roster-title">
         <header className="flex items-start justify-between gap-4 border-b border-[var(--line)] px-5 py-5 sm:px-7 sm:py-6">
           <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--blue)]">Roster</p>
-            <h2 id="roster-title" className="mt-1 truncate text-2xl font-semibold tracking-tight text-[var(--ink)]">{classPeriod.name}</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">{students.length} students · {remainingCount} left · {pickedCount} picked</p>
+            <h2 id="roster-title" className="truncate text-2xl font-semibold tracking-tight text-[var(--ink)]">Class roster</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">{classPeriod.name} · {students.length} students</p>
           </div>
           <button onClick={closeModal} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[var(--muted)] transition hover:bg-[#f4f3ef] hover:text-[var(--ink)]" aria-label="Close roster">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -135,7 +132,7 @@ export default function RosterModal({ isOpen, classPeriod, onClose, onAddStudent
           <section className="mt-7">
             <div className="mb-2 flex items-center justify-between px-1">
               <h3 className="text-sm font-semibold text-[var(--ink)]">Students</h3>
-              {students.length > 0 && <p className="text-xs text-[var(--muted)]">Select a name to edit</p>}
+              {students.length > 0 && <p className="text-xs text-[var(--muted)]">Click a name to edit</p>}
             </div>
 
             {students.length === 0 ? (

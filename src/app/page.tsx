@@ -110,10 +110,9 @@ export default function Dashboard() {
       <main className="mx-auto max-w-5xl px-5 py-10 sm:px-8 sm:py-14">
         <div className="mb-8 flex items-end justify-between gap-6">
           <div>
-            <p className="mb-2 text-sm font-semibold text-[var(--blue)]">Your classroom</p>
             <h2 className="text-3xl font-semibold tracking-[-0.035em] text-[var(--ink)] sm:text-4xl">Your classes</h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--muted)]">
-              Pick students fairly, keep track of turns, and start fresh whenever you need.
+              Select a class to start.
             </p>
           </div>
           {classes.length > 0 && (
@@ -126,15 +125,13 @@ export default function Dashboard() {
         {classes.length === 0 ? (
           <div className="border-t border-[var(--line)] py-16 sm:py-20">
             <div className="max-w-md">
-              <h3 className="text-xl font-semibold text-[var(--ink)]">Add your first class</h3>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                Add a class roster once, then use the picker whenever it is time for someone to share.
-              </p>
+              <h3 className="text-xl font-semibold text-[var(--ink)]">No classes yet</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Create a class and add your students.</p>
               <button
                 onClick={() => setShowAddModal(true)}
                 className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--ink)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#26324a]"
               >
-                Create a class
+                Add class
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-5-5 5 5-5 5" />
                 </svg>
@@ -169,10 +166,6 @@ export default function Dashboard() {
           </div>
         )}
       </main>
-
-      <footer className="mx-auto max-w-5xl px-5 pb-8 text-xs text-[var(--muted)] sm:px-8">
-        Built for calm, fair turns in every classroom.
-      </footer>
 
       <AddClassModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onAdd={handleAddClass} />
       <EditClassModal

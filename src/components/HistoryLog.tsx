@@ -39,8 +39,7 @@ export default function HistoryLog({ isOpen, onClose, uid, classId, className }:
       <div className="flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-[18px] bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="history-title">
         <header className="flex items-start justify-between gap-4 border-b border-[var(--line)] px-5 py-5 sm:px-7 sm:py-6">
           <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--blue)]">History</p>
-            <h2 id="history-title" className="mt-1 text-2xl font-semibold tracking-tight text-[var(--ink)]">Past picks</h2>
+            <h2 id="history-title" className="text-2xl font-semibold tracking-tight text-[var(--ink)]">History</h2>
             <p className="mt-1 truncate text-sm text-[var(--muted)]">{className}</p>
           </div>
           <button onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[var(--muted)] transition hover:bg-[#f4f3ef] hover:text-[var(--ink)]" aria-label="Close history">

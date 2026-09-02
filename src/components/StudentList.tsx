@@ -39,8 +39,8 @@ export default function StudentList({ title, students, variant, onPutBack }: Stu
       {!isCollapsed && (
         <div className="custom-scrollbar max-h-60 overflow-y-auto border-t border-[var(--line)]/70">
           {sortedStudents.length === 0 ? (
-            <p className="px-5 py-5 text-center text-xs text-[var(--muted)]">
-              {variant === 'uncalled' ? 'Everyone has been picked' : 'No one has been picked yet'}
+            <p className="px-5 py-6 text-center text-xs text-[var(--muted)]">
+              {variant === 'uncalled' ? 'None remaining' : 'No students yet'}
             </p>
           ) : (
             <ul className="divide-y divide-[var(--line)]/60 px-5">

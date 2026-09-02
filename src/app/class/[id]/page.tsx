@@ -120,10 +120,10 @@ export default function ClassPage() {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
         <p className="mb-3 text-sm font-semibold text-[var(--blue)]">Student Picker</p>
-        <h1 className="text-3xl font-semibold tracking-tight text-[var(--ink)]">We couldn’t find that class.</h1>
-        <p className="mt-3 text-sm leading-6 text-[var(--muted)]">It may have been removed, or the link may be out of date.</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-[var(--ink)]">Class not found</h1>
+        <p className="mt-3 text-sm leading-6 text-[var(--muted)]">It may have been deleted.</p>
         <button onClick={() => router.push('/')} className="mt-7 w-fit rounded-full bg-[var(--ink)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#26324a]">
-          Back to your classes
+          Back to classes
         </button>
       </main>
     );
@@ -190,46 +190,44 @@ export default function ClassPage() {
       <main className="mx-auto w-full max-w-7xl px-4 py-7 sm:px-7 sm:py-10">
         {totalStudents === 0 ? (
           <div className="mx-auto max-w-xl border-t border-[var(--line)] py-16 text-center sm:py-24">
-            <h1 className="text-2xl font-semibold tracking-tight text-[var(--ink)]">Add your students to begin</h1>
-            <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-[var(--muted)]">Paste a full roster or add names one at a time. You can edit the list whenever you need.</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--ink)]">No students yet</h1>
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-[var(--muted)]">Add or paste your class list.</p>
             <button onClick={() => setShowRoster(true)} className="mt-7 rounded-full bg-[var(--blue)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--blue-dark)]">
               Add students
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-12 xl:grid-cols-[minmax(0,1fr)_24rem] xl:gap-14">
             <section className="min-w-0">
               {uncalledStudents.length === 0 && calledStudents.length > 0 && (
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-y border-[var(--line)] py-3 text-sm">
-                  <p className="font-semibold text-[var(--ink)]">Everyone had a turn. A new round will start in a moment.</p>
-                  <button onClick={handleResetCycle} className="font-semibold text-[var(--blue)] hover:underline">Start now</button>
+                  <p className="font-semibold text-[var(--ink)]">Round complete. Resetting…</p>
+                  <button onClick={handleResetCycle} className="font-semibold text-[var(--blue)] hover:underline">Reset now</button>
                 </div>
               )}
               <SpinnerWheel names={uncalledNames} isSpinning={isSpinning} onSpinStart={() => setIsSpinning(true)} onSpinComplete={handleSpinComplete} />
             </section>
 
-            <aside className="overflow-hidden rounded-[18px] bg-white shadow-[0_18px_50px_-38px_rgba(23,32,51,0.5)] ring-1 ring-black/[0.04]">
-              <div className="px-5 py-5">
+            <aside className="self-start">
+              <div className="border-y border-[var(--line)] px-1 py-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--blue)]">This round</p>
-                    <p className="mt-1 text-sm text-[var(--muted)]">Every name gets one turn.</p>
+                    <p className="text-sm font-semibold text-[var(--ink)]">Round progress</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">{calledCount} of {totalStudents} picked</p>
                   </div>
                   <span className="text-2xl font-semibold tabular-nums text-[var(--ink)]">{progressPercent}%</span>
                 </div>
                 <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--paper-deep)]">
                   <div className="h-full rounded-full bg-[var(--blue)] transition-all duration-500" style={{ width: `${progressPercent}%` }} />
                 </div>
-                <div className="mt-4 flex gap-6 text-xs text-[var(--muted)]">
-                  <span><strong className="text-base font-semibold text-[var(--ink)]">{uncalledStudents.length}</strong> left</span>
-                  <span><strong className="text-base font-semibold text-[var(--ink)]">{calledStudents.length}</strong> picked</span>
-                </div>
               </div>
 
-              <StudentList title="Still to pick" students={uncalledStudents} variant="uncalled" />
-              <StudentList title="Already picked" students={calledStudents} variant="called" onPutBack={handlePutBack} />
+              <div className="mt-5 overflow-hidden rounded-[14px] bg-white shadow-[0_14px_40px_-34px_rgba(23,32,51,0.55)] ring-1 ring-black/[0.04]">
+                <StudentList title="Not picked" students={uncalledStudents} variant="uncalled" />
+                <StudentList title="Picked" students={calledStudents} variant="called" onPutBack={handlePutBack} />
+              </div>
 
-              <button onClick={() => setShowResetConfirm(true)} className="flex w-full items-center justify-center border-t border-[var(--line)] px-4 py-3.5 text-sm font-semibold text-[var(--muted)] transition hover:bg-[#fafaf8] hover:text-[var(--ink)] sm:hidden">
+              <button onClick={() => setShowResetConfirm(true)} className="mt-3 flex w-full items-center justify-center px-4 py-3 text-sm font-semibold text-[var(--muted)] transition hover:text-[var(--ink)] sm:hidden">
                 Reset round
               </button>
             </aside>
@@ -249,9 +247,9 @@ export default function ClassPage() {
       />
       <ConfirmDialog
         isOpen={showResetConfirm}
-        title="Start a new round?"
-        message="Everyone will return to the picker, ready to be chosen again."
-        confirmLabel="Start new round"
+        title="Reset round?"
+        message="All students will return to the wheel."
+        confirmLabel="Reset"
         variant="warning"
         onConfirm={handleResetCycle}
         onCancel={() => setShowResetConfirm(false)}

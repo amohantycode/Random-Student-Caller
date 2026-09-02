@@ -9,7 +9,7 @@ interface SpinnerWheelProps {
   onSpinStart: () => void;
 }
 
-// Cheerful, classroom-friendly colors with enough contrast for white labels.
+// High-contrast wheel colors for white labels.
 const SEGMENT_COLORS = [
   '#2f67d8',
   '#7559b7',
@@ -282,8 +282,8 @@ export default function SpinnerWheel({
             <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl text-[var(--green)] shadow-sm">
               ✓
             </div>
-            <p className="text-sm font-semibold text-[var(--ink)]">Everyone had a turn</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--muted)]">Getting a fresh round ready.</p>
+            <p className="text-sm font-semibold text-[var(--ink)]">Round complete</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--muted)]">Resetting…</p>
           </div>
         </div>
       </section>
@@ -298,13 +298,12 @@ export default function SpinnerWheel({
     >
       <div className="mb-6 flex w-full max-w-xl items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--blue)]">Fair pick</p>
-          <h2 id="student-picker-title" className="mt-1 text-2xl font-semibold tracking-tight text-[var(--ink)]">
-            {isSpinning ? 'Choosing a student…' : 'Who’s up next?'}
+          <h2 id="student-picker-title" className="text-2xl font-semibold tracking-tight text-[var(--ink)]">
+            {isSpinning ? 'Picking…' : 'Pick a student'}
           </h2>
         </div>
         <div className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[var(--muted)] shadow-sm ring-1 ring-black/[0.04]">
-          {names.length} {names.length === 1 ? 'student' : 'students'} left
+          {names.length} remaining
         </div>
       </div>
 
@@ -346,20 +345,20 @@ export default function SpinnerWheel({
       </div>
 
       <p className="mt-4 text-center text-xs text-[var(--muted)]">
-        Tap the wheel or press Enter to make a fair pick.
+        Tap the wheel to spin.
       </p>
 
       <div className="mt-5 min-h-[92px] w-full max-w-xl" aria-live="polite" aria-atomic="true">
         {showResult && selectedName ? (
           <div className="animate-slide-up border-y border-[#cdd9f7] bg-[var(--blue-soft)] px-5 py-4 text-center motion-reduce:animate-none">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--blue)]">Up next</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--blue)]">Selected</p>
             <p className="mt-1 break-words text-2xl font-semibold leading-tight text-[var(--ink)] [overflow-wrap:anywhere] sm:text-3xl">
               {selectedName}
             </p>
           </div>
         ) : (
           <div className="flex min-h-[92px] items-center justify-center border-y border-[var(--line)] px-5 text-center text-sm text-[var(--muted)]">
-            {isSpinning ? 'Watching the wheel…' : 'The selected student’s full name will appear here.'}
+            {isSpinning ? 'Picking…' : 'The name will appear here.'}
           </div>
         )}
       </div>

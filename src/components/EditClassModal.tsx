@@ -27,8 +27,7 @@ export default function EditClassModal({ isOpen, classPeriod, onClose, onSave }:
       <button className="absolute inset-0 cursor-default bg-[var(--ink)]/45 backdrop-blur-sm" onClick={onClose} aria-label="Close dialog" />
       <div role="dialog" aria-modal="true" aria-labelledby="edit-class-title" className="animate-slide-up relative w-full max-w-md overflow-hidden rounded-[18px] bg-white shadow-2xl">
         <div className="px-6 pb-2 pt-6 sm:px-7 sm:pt-7">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--blue)]">Class details</p>
-          <h2 id="edit-class-title" className="mt-1 text-2xl font-semibold tracking-tight text-[var(--ink)]">Edit class</h2>
+          <h2 id="edit-class-title" className="text-2xl font-semibold tracking-tight text-[var(--ink)]">Edit class</h2>
         </div>
         <form onSubmit={handleSubmit} className="px-6 pb-6 pt-5 sm:px-7 sm:pb-7">
           <div className="space-y-5">

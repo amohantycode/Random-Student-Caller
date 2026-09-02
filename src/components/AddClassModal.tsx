@@ -33,9 +33,7 @@ export default function AddClassModal({ isOpen, onClose, onAdd }: AddClassModalP
       <button className="absolute inset-0 cursor-default bg-[var(--ink)]/45 backdrop-blur-sm" onClick={closeModal} aria-label="Close dialog" />
       <div role="dialog" aria-modal="true" aria-labelledby="add-class-title" className="animate-slide-up relative w-full max-w-md overflow-hidden rounded-[18px] bg-white shadow-2xl">
         <div className="px-6 pb-2 pt-6 sm:px-7 sm:pt-7">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--blue)]">New class</p>
-          <h2 id="add-class-title" className="mt-1 text-2xl font-semibold tracking-tight text-[var(--ink)]">Set up a class</h2>
-          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Give it the name and period teachers and students already know.</p>
+          <h2 id="add-class-title" className="text-2xl font-semibold tracking-tight text-[var(--ink)]">Add class</h2>
         </div>
         <form onSubmit={handleSubmit} className="px-6 pb-6 pt-5 sm:px-7 sm:pb-7">
           <div className="space-y-5">
