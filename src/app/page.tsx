@@ -108,11 +108,11 @@ export default function Dashboard() {
       </header>
 
       <main className="mx-auto max-w-5xl px-5 py-10 sm:px-8 sm:py-14">
-        <div className="mb-8 flex items-end justify-between gap-6">
+        <div className="mb-8 flex items-end justify-between gap-6 sm:mb-10">
           <div>
             <h2 className="text-3xl font-semibold tracking-[-0.035em] text-[var(--ink)] sm:text-4xl">Your classes</h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--muted)]">
-              Select a class to start.
+              Select a class to start the picker.
             </p>
           </div>
           {classes.length > 0 && (
@@ -139,29 +139,29 @@ export default function Dashboard() {
             </div>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-[18px] bg-white shadow-[0_18px_50px_-38px_rgba(23,32,51,0.5)] ring-1 ring-black/[0.04]">
-            <div className="divide-y divide-[var(--line)]/80">
-              {classes.map((classPeriod) => (
-                <ClassCard
-                  key={classPeriod.id}
-                  classPeriod={classPeriod}
-                  onClick={() => router.push(`/class/${classPeriod.id}`)}
-                  onEdit={() => { setSelectedClass(classPeriod); setShowEditModal(true); }}
-                  onDelete={() => { setSelectedClass(classPeriod); setShowDeleteConfirm(true); }}
-                />
-              ))}
-            </div>
-
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+            {classes.map((classPeriod) => (
+              <ClassCard
+                key={classPeriod.id}
+                classPeriod={classPeriod}
+                onClick={() => router.push(`/class/${classPeriod.id}`)}
+                onEdit={() => { setSelectedClass(classPeriod); setShowEditModal(true); }}
+                onDelete={() => { setSelectedClass(classPeriod); setShowDeleteConfirm(true); }}
+              />
+            ))}
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex w-full items-center gap-3 px-5 py-4 text-left text-sm font-semibold text-[var(--blue)] transition hover:bg-[var(--blue-soft)]/55 sm:px-6"
+              className="group flex min-h-52 flex-col items-start justify-between rounded-[20px] border border-dashed border-[var(--line)] bg-white/35 p-5 text-left transition hover:border-[var(--blue)]/35 hover:bg-white/65 sm:p-6"
             >
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-[var(--blue-soft)]">
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.3">
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--blue-soft)] text-[var(--blue)] transition group-hover:scale-105">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.3" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m7-7H5" />
                 </svg>
               </span>
-              Add another class
+              <span>
+                <span className="block text-lg font-semibold tracking-[-0.02em] text-[var(--ink)]">Add another class</span>
+                <span className="mt-1.5 block text-sm font-normal leading-6 text-[var(--muted)]">Create a class and add its roster.</span>
+              </span>
             </button>
           </div>
         )}

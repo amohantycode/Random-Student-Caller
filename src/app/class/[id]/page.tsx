@@ -212,7 +212,7 @@ export default function ClassPage() {
               <div className="border-y border-[var(--line)] px-1 py-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-[var(--ink)]">Round progress</p>
+                    <p className="text-sm font-semibold text-[var(--ink)]">This round</p>
                     <p className="mt-1 text-xs text-[var(--muted)]">{calledCount} of {totalStudents} picked</p>
                   </div>
                   <span className="text-2xl font-semibold tabular-nums text-[var(--ink)]">{progressPercent}%</span>

@@ -15,11 +15,11 @@ export default function ClassCard({ classPeriod, onClick, onEdit, onDelete }: Cl
   const progressPercentage = totalStudents > 0 ? Math.round((calledStudents / totalStudents) * 100) : 0;
 
   return (
-    <article className="group relative transition-colors hover:bg-[#fafaf8]">
-      <div className="absolute right-4 top-1/2 z-10 flex -translate-y-1/2 gap-1 sm:right-5 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+    <article className="group relative overflow-hidden rounded-[20px] bg-white shadow-[0_18px_45px_-34px_rgba(23,32,51,0.62)] ring-1 ring-black/[0.05] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_55px_-34px_rgba(23,32,51,0.7)]">
+      <div className="absolute right-4 top-4 z-10 flex gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
         <button
           onClick={(event) => { event.stopPropagation(); onEdit(); }}
-          className="grid h-9 w-9 place-items-center rounded-full bg-white text-[var(--muted)] shadow-sm ring-1 ring-black/[0.06] transition hover:text-[var(--blue)]"
+          className="grid h-8 w-8 place-items-center rounded-full bg-[var(--paper)] text-[var(--muted)] transition hover:bg-[var(--blue-soft)] hover:text-[var(--blue)]"
           title="Edit class"
           aria-label={`Edit ${classPeriod.name}`}
         >
@@ -29,7 +29,7 @@ export default function ClassCard({ classPeriod, onClick, onEdit, onDelete }: Cl
         </button>
         <button
           onClick={(event) => { event.stopPropagation(); onDelete(); }}
-          className="grid h-9 w-9 place-items-center rounded-full bg-white text-[var(--muted)] shadow-sm ring-1 ring-black/[0.06] transition hover:text-[var(--red)]"
+          className="grid h-8 w-8 place-items-center rounded-full bg-[var(--paper)] text-[var(--muted)] transition hover:bg-red-50 hover:text-[var(--red)]"
           title="Delete class"
           aria-label={`Delete ${classPeriod.name}`}
         >
@@ -41,23 +41,45 @@ export default function ClassCard({ classPeriod, onClick, onEdit, onDelete }: Cl
 
       <button
         onClick={onClick}
-        className="grid w-full grid-cols-1 items-center gap-5 px-5 py-5 pr-24 text-left sm:grid-cols-[8rem_1fr_10rem] sm:px-6 sm:py-6 sm:pr-28"
+        className="flex min-h-52 w-full flex-col p-5 text-left sm:p-6"
+        aria-label={`Open ${classPeriod.name}`}
       >
-        <div className="hidden sm:block">
-          <span className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--blue)]">{classPeriod.period}</span>
+        <div className="flex min-h-8 items-center pr-20">
+          <span className="rounded-full bg-[var(--blue-soft)] px-3 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.13em] text-[var(--blue)]">
+            {classPeriod.period}
+          </span>
         </div>
-        <div className="min-w-0">
-          <span className="mb-1 block text-[0.67rem] font-bold uppercase tracking-[0.14em] text-[var(--blue)] sm:hidden">{classPeriod.period}</span>
-          <h3 className="truncate text-base font-semibold text-[var(--ink)] sm:text-lg">{classPeriod.name}</h3>
-          <p className="mt-1 text-xs text-[var(--muted)]">{totalStudents} {totalStudents === 1 ? 'student' : 'students'}</p>
+
+        <div className="mt-6 min-w-0">
+          <h3 className="truncate text-xl font-semibold tracking-[-0.02em] text-[var(--ink)]">{classPeriod.name}</h3>
+          <p className="mt-1.5 text-sm text-[var(--muted)]">
+            {totalStudents} {totalStudents === 1 ? 'student' : 'students'}
+          </p>
         </div>
-        <div className="hidden sm:block">
-          <div className="mb-2 flex justify-between text-xs">
-            <span className="text-[var(--muted)]">Round progress</span>
-            <span className="font-semibold text-[var(--ink)]">{calledStudents}/{totalStudents}</span>
+
+        <div className="mt-auto pt-7">
+          <div className="mb-2.5 flex items-center justify-between text-xs">
+            <span className="font-medium text-[var(--muted)]">This round</span>
+            <span className="font-semibold tabular-nums text-[var(--ink)]">{calledStudents}/{totalStudents}</span>
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--paper-deep)]">
-            <div className="h-full rounded-full bg-[var(--blue)] transition-all duration-500 ease-out" style={{ width: `${progressPercentage}%` }} />
+          <div
+            className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--paper-deep)]"
+            role="progressbar"
+            aria-label={`${classPeriod.name}: ${calledStudents} of ${totalStudents} students picked this round`}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progressPercentage}
+          >
+            <div
+              className="h-full rounded-full bg-[var(--blue)] transition-all duration-500 ease-out"
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
+          <div className="mt-4 flex items-center justify-end gap-1.5 text-xs font-semibold text-[var(--blue)] transition group-hover:gap-2.5">
+            Open class
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-5-5 5 5-5 5" />
+            </svg>
           </div>
         </div>
       </button>
