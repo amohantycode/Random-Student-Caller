@@ -9,9 +9,53 @@ import {
   updateDoc,
   query,
   orderBy,
+  runTransaction,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { ClassPeriod, Student, HistoryEntry } from './types';
+import type { User } from './auth';
+
+// Keep authentication IDs stable; readable fields make users searchable in the console.
+export async function syncUserProfile(user: Pick<User, 'uid' | 'displayName' | 'email'>): Promise<void> {
+  await setDoc(doc(db, 'users', user.uid), {
+    displayName: user.displayName || user.email || 'Teacher',
+    email: user.email,
+  }, { merge: true });
+}
+
+function rosterSummary(students: Student[]) {
+  return {
+    studentNames: students.map((student) => student.name).sort((a, b) => a.localeCompare(b)),
+    studentCount: students.length,
+    remainingCount: students.filter((student) => !student.called).length,
+  };
+}
+
+function hasCurrentSummary(data: Record<string, unknown>) {
+  const summary = rosterSummary(data.students as Student[]);
+  return data.studentCount === summary.studentCount
+    && data.remainingCount === summary.remainingCount
+    && JSON.stringify(data.studentNames) === JSON.stringify(summary.studentNames);
+}
+
+// Add only derived fields. A transaction prevents a concurrent roster edit or
+// class deletion from being overwritten by this optional console backfill.
+async function refreshClassSummary(uid: string, classId: string): Promise<void> {
+  await runTransaction(db, async (transaction) => {
+    const ref = classDoc(uid, classId);
+    const snapshot = await transaction.get(ref);
+    if (!snapshot.exists() || hasCurrentSummary(snapshot.data())) return;
+    transaction.update(ref, rosterSummary(snapshot.data().students as Student[]));
+  });
+}
+
+function backfillClassSummary(uid: string, classId: string, data: Record<string, unknown>) {
+  if (hasCurrentSummary(data)) return;
+  // Existing classes still load if optional metadata writes are denied or offline.
+  void refreshClassSummary(uid, classId).catch((error) => {
+    console.warn('Could not refresh the class console summary.', error);
+  });
+}
 
 // Helper: generate a short unique ID
 export function generateId(): string {
@@ -33,6 +77,7 @@ export async function getClasses(uid: string): Promise<ClassPeriod[]> {
   const classes: ClassPeriod[] = [];
   snapshot.forEach((doc) => {
     classes.push({ id: doc.id, ...doc.data() } as ClassPeriod);
+    backfillClassSummary(uid, doc.id, doc.data());
   });
   return classes.sort((a, b) => a.period.localeCompare(b.period));
 }
@@ -40,6 +85,7 @@ export async function getClasses(uid: string): Promise<ClassPeriod[]> {
 export async function getClassById(uid: string, classId: string): Promise<ClassPeriod | null> {
   const snap = await getDoc(classDoc(uid, classId));
   if (!snap.exists()) return null;
+  backfillClassSummary(uid, snap.id, snap.data());
   return { id: snap.id, ...snap.data() } as ClassPeriod;
 }
 
@@ -57,6 +103,7 @@ export async function addClass(uid: string, name: string, period: string): Promi
     period: newClass.period,
     students: newClass.students,
     createdAt: newClass.createdAt,
+    ...rosterSummary(newClass.students),
   });
   return newClass;
 }
@@ -72,7 +119,7 @@ export async function deleteClass(uid: string, classId: string): Promise<void> {
 // --- Students ---
 
 async function updateStudents(uid: string, classId: string, students: Student[]): Promise<void> {
-  await updateDoc(classDoc(uid, classId), { students });
+  await updateDoc(classDoc(uid, classId), { students, ...rosterSummary(students) });
 }
 
 export async function addStudent(uid: string, classId: string, name: string): Promise<void> {

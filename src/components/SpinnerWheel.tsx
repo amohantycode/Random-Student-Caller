@@ -228,7 +228,7 @@ export default function SpinnerWheel({
     const extraSpins = prefersReducedMotion ? 1 : 5 + Math.random() * 2;
     const totalRotation = extraSpins * TAU + Math.random() * TAU;
     const startRotation = rotationRef.current;
-    const duration = prefersReducedMotion ? 700 : 4200 + Math.random() * 600;
+    const duration = prefersReducedMotion ? 700 : 6200 + Math.random() * 800;
     const startTime = performance.now();
 
     const animate = (currentTime: number) => {
@@ -326,16 +326,16 @@ export default function SpinnerWheel({
           <span className="pointer-events-none absolute left-1/2 top-1/2 flex aspect-square w-[22%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full text-[var(--ink)]">
             <svg
               viewBox="0 0 24 24"
-              className={`mb-0.5 h-[24%] w-[24%] text-[var(--blue)] ${isSpinning ? 'animate-spin' : 'transition-transform duration-300 group-hover:rotate-45'}`}
+              className={`mb-1 h-[28%] w-[28%] text-[var(--blue)] ${isSpinning ? 'animate-spin [animation-duration:1.8s] motion-reduce:animate-none' : 'transition-transform duration-300 group-hover:rotate-45 motion-reduce:transform-none'}`}
               fill="none"
               stroke="currentColor"
-              strokeWidth="2.4"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
             >
-              <path d="M20 7v5h-5" />
-              <path d="M19 12a7 7 0 1 1-2.05-4.95L20 10" />
+              <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8" />
+              <path d="M21 3v5h-5" />
             </svg>
             <span className="text-[clamp(0.62rem,2.4vw,0.82rem)] font-black tracking-[0.12em]">
               {isSpinning ? 'PICKING' : 'SPIN'}

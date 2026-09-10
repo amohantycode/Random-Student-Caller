@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthChange, User } from '@/lib/auth';
+import { syncUserProfile } from '@/lib/storage';
 
 interface AuthContextType {
   user: User | null;
@@ -18,6 +19,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthChange((user) => {
       setUser(user);
       setLoading(false);
+      if (user) {
+        void syncUserProfile(user).catch((error) => {
+          console.warn('Could not update the account console details.', error);
+        });
+      }
     });
     return unsubscribe;
   }, []);

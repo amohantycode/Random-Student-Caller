@@ -65,3 +65,33 @@ Built for classroom presentation management across multiple class periods with c
 - **Database**: Cloud Firestore
 - **Graphics**: HTML5 Canvas for the spinner wheel
 - **Deployment**: Vercel
+
+## Browsing saved data in Firebase
+
+In Firestore, open `users/{uid}` to see the teacher's `displayName` and `email`.
+The user IDs stay unchanged so existing accounts keep their classes. These
+identifying fields are merged when a signed-in user opens the updated app;
+they do not replace any existing user fields or subcollections.
+
+Under `users/{uid}/classes/{classId}`, each class has its existing `name` and
+`period`, plus these console summaries:
+
+- `studentNames`: alphabetized names (including duplicate names).
+- `studentCount`: total number of students.
+- `remainingCount`: students who have not been called this round.
+
+The original `students` array remains the source of truth, including student
+IDs, called flags, and timestamps. The `history` subcollection stays in place.
+Use the website to edit rosters; summary fields are derived, not editable rosters.
+New roster changes save the summaries together with the students. Existing
+classes gain summaries in the background when opened or listed, and outdated
+summaries are repaired on a later read. A failed backfill does not prevent reads.
+
+This is an additive rollout, not a bulk migration: inactive accounts are updated
+when they next use the deployed app. No production data needs to be deleted or
+moved. Existing Firestore rules must allow each signed-in user to merge their own
+`users/{uid}` document and update their own class documents; do not grant public
+access. If profile writes are denied, the app still works and logs a warning,
+but those account details will not appear until the existing rules permit them.
+
+Run `node --test tests/storage.test.mjs` for isolated data-preservation checks.
